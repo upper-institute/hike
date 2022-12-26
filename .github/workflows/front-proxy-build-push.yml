@@ -1,0 +1,61 @@
+name: "[Front Proxy] Build & Push"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - container/front-proxy/**
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: front-proxy
+
+jobs:
+  build-and-push-image:
+    name: Build & push front proxy container image
+    runs-on: ubuntu-22.04
+
+    permissions:
+      id-token: write
+      packages: write
+      contents: read
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        ref: ${{ github.ref_name }}
+        persist-credentials: false
+
+    - name: Login to Amazon ECR
+      id: registry-login
+      uses: upper-institute/registry-login-action@v1.8
+      with:
+        driver: custom
+        client: podman
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Buildah Action - Build container image from Containerfile
+      id: build-image
+      uses: redhat-actions/buildah-build@v2
+      with:
+        image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        archs: amd64,arm64
+        tags: commit-${{ github.sha }}
+        oci: 'true'
+        context: ./
+        containerfiles: |
+          ./container/front-proxy/Containerfile
+        # build-args: |
+        #   some_arg=some_value
+
+    - name: Push to private AWS ECR
+      uses: redhat-actions/push-to-registry@v2
+      with:
+        image: ${{ steps.build-image.outputs.image }}
+        tags: ${{ steps.build-image.outputs.tags }}
+        registry: ${{ steps.registry-login.outputs.registry_uri_0 }}

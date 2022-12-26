@@ -1,0 +1,20 @@
+FROM golang:alpine as builder
+
+RUN mkdir /build
+ADD . /build/
+WORKDIR /build
+
+RUN CGO_ENABLED=0 go build -o ops-control ./cmd/main.go
+
+FROM docker.io/envoyproxy/envoy:v1.24-latest
+
+COPY --from=builder /build/ops-control /usr/local/bin/
+
+WORKDIR /etc/envoy/
+COPY envoy.yaml ./
+
+EXPOSE 8080
+EXPOSE 8081
+
+
+CMD ["envoy", "-l", "info",  "-c", "/etc/envoy/envoy.yaml"]
