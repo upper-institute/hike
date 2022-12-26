@@ -11,9 +11,12 @@ FROM docker.io/envoyproxy/envoy:v1.24-latest
 COPY --from=builder /build/ops-control /usr/local/bin/
 
 WORKDIR /etc/envoy/
-COPY envoy.yaml ./
+COPY container/front-proxy/envoy.yaml ./
+COPY container/front-proxy/docker-entrypoint.sh ./
 
 EXPOSE 8080
 EXPOSE 8081
+
+ENTRYPOINT ["/etc/envoy/docker-entrypoint.sh"]
 
 CMD ["envoy", "-l", "info",  "-c", "/etc/envoy/envoy.rendered.yaml"]
