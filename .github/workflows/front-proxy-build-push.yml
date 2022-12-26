@@ -28,9 +28,9 @@ jobs:
         ref: ${{ github.ref_name }}
         persist-credentials: false
 
-    - name: Login to Amazon ECR
+    - name: Login to GitHub Registry
       id: registry-login
-      uses: upper-institute/registry-login-action@v1.9
+      uses: upper-institute/registry-login-action@v1.11
       with:
         driver: custom
         client: podman
