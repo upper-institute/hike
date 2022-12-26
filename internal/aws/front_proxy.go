@@ -35,16 +35,17 @@ func (f *FrontProxy) getListNamespacesInputFilters() []types.NamespaceFilter {
 	condition := types.FilterConditionEq
 
 	if f.MatchNamespaceNamePrefix {
+		log.Printf("Condition to filter namespaces set to 'begins_with'")
 		condition = types.FilterConditionBeginsWith
 	}
 
+	log.Printf("Filtering namespaces %v\n", f.NamespacesNames)
+
 	namesFilter := types.NamespaceFilter{
 		Name:      types.NamespaceFilterNameName,
-		Values:    []string{},
+		Values:    f.NamespacesNames,
 		Condition: condition,
 	}
-
-	namesFilter.Values = append(namesFilter.Values, f.NamespacesNames...)
 
 	return []types.NamespaceFilter{namesFilter}
 
@@ -73,6 +74,7 @@ func (f *FrontProxy) getListServicesInputFilters(ctx context.Context, client *se
 		}
 
 		for _, namespace := range listNamespacesPage.Namespaces {
+			log.Printf("Filtering by namespace id %s (%s)\n", aws.ToString(namespace.Id), aws.ToString(namespace.Name))
 			namespaceIdsFilter.Values = append(namespaceIdsFilter.Values, aws.ToString(namespace.Id))
 		}
 
