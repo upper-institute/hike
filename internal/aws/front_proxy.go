@@ -2,6 +2,7 @@ package aws
 
 import (
 	"context"
+	"log"
 	"strconv"
 	"time"
 
@@ -83,6 +84,8 @@ func (f *FrontProxy) getListServicesInputFilters(ctx context.Context, client *se
 
 func (f *FrontProxy) addGrpcServiceCluster(service types.ServiceSummary) {
 
+	log.Printf("Adding service cluster (GRPC): %s\n", aws.ToString(service.Name))
+
 	f.Resources[resource.ClusterType] = append(
 		f.Resources[resource.ClusterType],
 		&clusterv3.Cluster{
@@ -118,6 +121,8 @@ func (f *FrontProxy) addGrpcServiceCluster(service types.ServiceSummary) {
 }
 
 func (f *FrontProxy) addHttp1ServiceCluster(service types.ServiceSummary) {
+
+	log.Printf("Adding service cluster (HTTP1): %s\n", aws.ToString(service.Name))
 
 	protocolOptions, err := anypb.New(&httpv3.HttpProtocolOptions{
 		UpstreamProtocolOptions: &httpv3.HttpProtocolOptions_ExplicitHttpConfig_{
@@ -202,6 +207,10 @@ func (f *FrontProxy) discoverService(ctx context.Context, client *servicediscove
 		f.addHttp1ServiceCluster(service)
 
 		servicePortParam = parameter.GetStringValue(Http1ServerPortParam)
+
+	default:
+		log.Printf("Warning: unknown application type for service %s, skipping service\n", aws.ToString(service.Name))
+		return nil
 
 	}
 

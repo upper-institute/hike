@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	envoyctlr "github.com/upper-institute/ops-control/cmd/controllers/envoy"
 	parameterctlr "github.com/upper-institute/ops-control/cmd/controllers/parameter"
 	"google.golang.org/grpc"
@@ -32,7 +31,7 @@ var (
 
 	RootCmd = &cobra.Command{
 		Use:   rootCmdUse,
-		Short: "flipbook - Snapshot store",
+		Short: "ops-control, functions to control cloud native operations",
 		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
 
 			isGrpcServer := false
@@ -89,21 +88,12 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/."+rootCmdUse+".yaml)")
 
 	RootCmd.PersistentFlags().StringVar(&listenAddr, "listenAddr", "0.0.0.0:7070", "Bind address to store gRPC server")
 	RootCmd.PersistentFlags().BoolVar(&enableTls, "tls", false, "Enable TLS protocol only on gRPC server")
 	RootCmd.PersistentFlags().StringVar(&tlsKey, "tlsKey", "", "PEM encoded private key file path")
 	RootCmd.PersistentFlags().StringVar(&tlsCert, "tlsCert", "", "PEM encoded certificate file path")
 	RootCmd.PersistentFlags().IntVar(&grpcMaxConcurrentStreams, "grpcMaxConcurrentStreams", 1000000, "Max concurrent streams for gRPC server")
-
-	viper.BindPFlag("grpcServer.listenAddr", RootCmd.Flags().Lookup("listenAddr"))
-	viper.BindPFlag("grpcServer.tls.enable", RootCmd.Flags().Lookup("tls"))
-	viper.BindPFlag("grpcServer.tls.tlsKey", RootCmd.Flags().Lookup("tlsKey"))
-	viper.BindPFlag("grpcServer.tls.tlsCert", RootCmd.Flags().Lookup("tlsCert"))
-	viper.BindPFlag("grpcServer.grpc.maxConcurrentStreams", RootCmd.Flags().Lookup("grpcMaxConcurrentStreams"))
 
 	RootCmd.AddCommand(envoyctlr.EnvoyCmd)
 	RootCmd.AddCommand(parameterctlr.ParameterCmd)
@@ -120,27 +110,4 @@ func serveGrpcServer() {
 		log.Fatalln("Failed to serve because", err)
 	}
 
-}
-
-func initConfig() {
-
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
-
-		// Search config in home directory with name "." + rootCmdUse (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigType("yaml")
-		viper.SetConfigName("." + rootCmdUse)
-	}
-
-	viper.AutomaticEnv()
-
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
 }

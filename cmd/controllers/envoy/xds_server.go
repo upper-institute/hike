@@ -47,6 +47,7 @@ var (
 
 							awsFrontProxy = &awsctlr.FrontProxy{
 								Config:               config,
+								NamespacesNames:      awsCloudMapNamespaces,
 								GenericConfiguration: genericConfiguration,
 							}
 
