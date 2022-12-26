@@ -25,7 +25,7 @@ const (
 	ConsumersTag_Http    ConsumersTagType = "http"
 	ConsumersTag_GrpcWeb ConsumersTagType = "grpc-web"
 
-	ConfigurationPathTag = "configuration-path"
+	ConfigurationPathTag = "configuration_path"
 )
 
 type TagArrayValue map[string]bool

@@ -74,7 +74,7 @@ func (f *FrontProxy) getListServicesInputFilters(ctx context.Context, client *se
 		}
 
 		for _, namespace := range listNamespacesPage.Namespaces {
-			log.Printf("Filtering by namespace id %s (%s)\n", aws.ToString(namespace.Id), aws.ToString(namespace.Name))
+			log.Printf("Filtering services by namespace id %s (%s)\n", aws.ToString(namespace.Id), aws.ToString(namespace.Name))
 			namespaceIdsFilter.Values = append(namespaceIdsFilter.Values, aws.ToString(namespace.Id))
 		}
 
@@ -176,6 +176,10 @@ func (f *FrontProxy) addHttp1ServiceCluster(service types.ServiceSummary) {
 
 func (f *FrontProxy) discoverService(ctx context.Context, client *servicediscovery.Client, service types.ServiceSummary) error {
 
+	serviceName := aws.ToString(service.Name)
+
+	log.Printf("Discover service: %s (id: %s)\n", serviceName, aws.ToString(service.Id))
+
 	listServiceTagsRes, err := client.ListTagsForResource(ctx, &servicediscovery.ListTagsForResourceInput{ResourceARN: service.Arn})
 	if err != nil {
 		return err
@@ -183,10 +187,17 @@ func (f *FrontProxy) discoverService(ctx context.Context, client *servicediscove
 
 	serviceTags := NewTagsFromTagList(listServiceTagsRes.Tags)
 
+	if len(serviceTags.ConfigurationPath) == 0 {
+		log.Printf("Missing configuration path for service %s, skipping service discovery\n", serviceName)
+		return nil
+	}
+
 	parameter := &Parameter{
 		Config: f.Config,
 		Path:   serviceTags.ConfigurationPath,
 	}
+
+	log.Printf("Service configuration path: %s\n", serviceTags.ConfigurationPath)
 
 	err = parameter.LoadParameters(ctx)
 	if err != nil {
@@ -204,14 +215,18 @@ func (f *FrontProxy) discoverService(ctx context.Context, client *servicediscove
 
 		servicePortParam = parameter.GetStringValue(GrpcServicePortParam)
 
+		log.Printf("Service %s is a gRPC service, listening on port %s\n", serviceName, servicePortParam)
+
 	case serviceTags.IsApplication(ApplicationTag_Http1Server):
 
 		f.addHttp1ServiceCluster(service)
 
 		servicePortParam = parameter.GetStringValue(Http1ServerPortParam)
 
+		log.Printf("Service %s is a HTTP1 server, listening on port %s\n", serviceName, servicePortParam)
+
 	default:
-		log.Printf("Warning: unknown application type for service %s, skipping service\n", aws.ToString(service.Name))
+		log.Printf("Warning: unknown application type for service %s, skipping service\n", serviceName)
 		return nil
 
 	}
@@ -234,7 +249,7 @@ func (f *FrontProxy) discoverService(ctx context.Context, client *servicediscove
 		},
 	)
 
-	clusterName := aws.ToString(service.Name)
+	clusterName := serviceName
 
 	var lbEndpoints []*endpointv3.LbEndpoint
 
