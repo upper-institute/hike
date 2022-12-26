@@ -9,7 +9,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: front-proxy
+  IMAGE_NAME: ${{ github.repository }}/front-proxy
 
 jobs:
   build-and-push-image:
@@ -17,7 +17,6 @@ jobs:
     runs-on: ubuntu-22.04
 
     permissions:
-      id-token: write
       packages: write
       contents: read
 
@@ -31,7 +30,7 @@ jobs:
 
     - name: Login to Amazon ECR
       id: registry-login
-      uses: upper-institute/registry-login-action@v1.8
+      uses: upper-institute/registry-login-action@v1.9
       with:
         driver: custom
         client: podman
