@@ -39,7 +39,7 @@ func (g *GenericConfiguration) HashResources() []byte {
 				panic(err)
 			}
 
-			hash.Sum(msg)
+			hash.Write(msg)
 
 		}
 
