@@ -3,12 +3,12 @@ package envoy
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/gob"
 	"strconv"
 	"sync/atomic"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type GenericConfiguration struct {
@@ -30,11 +30,19 @@ func (g *GenericConfiguration) HashResources() []byte {
 
 	hash := sha256.New()
 
-	enc := gob.NewEncoder(hash)
+	for _, resources := range g.Resources {
 
-	err := enc.Encode(g.Resources)
-	if err != nil {
-		panic(err)
+		for _, resource := range resources {
+
+			msg, err := protojson.Marshal(resource)
+			if err != nil {
+				panic(err)
+			}
+
+			hash.Sum(msg)
+
+		}
+
 	}
 
 	return hash.Sum(nil)
