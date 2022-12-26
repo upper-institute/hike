@@ -8,6 +8,10 @@ RUN CGO_ENABLED=0 go build -o ops-control ./cmd/main.go
 
 FROM docker.io/envoyproxy/envoy:v1.24-latest
 
+LABEL "organization.name"="upper-institute"
+LABEL "organization.repository"="ops-control"
+LABEL "repository.application"="front-proxy"
+
 COPY --from=builder /build/ops-control /usr/local/bin/
 
 WORKDIR /etc/envoy/
