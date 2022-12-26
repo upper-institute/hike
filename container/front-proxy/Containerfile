@@ -18,9 +18,6 @@ WORKDIR /etc/envoy/
 COPY container/front-proxy/envoy.yaml ./
 COPY container/front-proxy/docker-entrypoint.sh ./
 
-EXPOSE 8080
-EXPOSE 8081
-
 ENTRYPOINT ["/etc/envoy/docker-entrypoint.sh"]
 
 CMD ["envoy", "-l", "info",  "-c", "/etc/envoy/envoy.rendered.yaml"]
