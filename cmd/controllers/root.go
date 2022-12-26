@@ -30,12 +30,16 @@ var (
 	grpcServerListener net.Listener
 	grpcServer         *grpc.Server
 
-	isGrpcServer = false
-
 	RootCmd = &cobra.Command{
 		Use:   rootCmdUse,
 		Short: "flipbook - Snapshot store",
 		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+
+			isGrpcServer := false
+
+			if envoyctlr.RegisterServices(grpcServer) {
+				isGrpcServer = true
+			}
 
 			if isGrpcServer {
 				serveGrpcServer()
@@ -107,10 +111,6 @@ func init() {
 }
 
 func serveGrpcServer() {
-
-	if envoyctlr.RegisterServices(grpcServer) {
-		isGrpcServer = true
-	}
 
 	reflection.Register(grpcServer)
 
