@@ -7,6 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	awsctlr "github.com/upper-institute/ops-control/internal/aws"
 	envoyctlr "github.com/upper-institute/ops-control/internal/envoy"
 
@@ -30,13 +31,19 @@ var (
 					awsFrontProxy *awsctlr.FrontProxy
 
 					genericConfiguration = &envoyctlr.GenericConfiguration{}
+
+					discoveryMinInterval = viper.GetDuration("envoy.discoveryMinInterval")
 				)
 
 				for {
 
+					log.Println("Starting new discovery execution")
+
 					ctx := context.Background()
 
-					if enableAwsEnvoyFrontProxy {
+					if viper.GetBool("envoy.enableAwsEnvoyFrontProxy") {
+
+						log.Println("AWS front proxy discovery enabled")
 
 						if awsFrontProxy == nil {
 
@@ -47,7 +54,7 @@ var (
 
 							awsFrontProxy = &awsctlr.FrontProxy{
 								Config:               config,
-								NamespacesNames:      awsCloudMapNamespaces,
+								NamespacesNames:      viper.GetStringSlice("envoy.aws.cloudMap.namespaces"),
 								GenericConfiguration: genericConfiguration,
 							}
 
@@ -67,10 +74,12 @@ var (
 						log.Fatalln(err.Error())
 					}
 
-					err = cache.SetSnapshot(ctx, nodeId, snapshot)
+					err = cache.SetSnapshot(ctx, viper.GetString("envoy.nodeId"), snapshot)
 					if err != nil {
 						log.Fatalln(err.Error())
 					}
+
+					log.Println("Service discovery execution ended successfully")
 
 					time.Sleep(discoveryMinInterval)
 				}

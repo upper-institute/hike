@@ -6,8 +6,10 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	envoyctlr "github.com/upper-institute/ops-control/cmd/controllers/envoy"
 	parameterctlr "github.com/upper-institute/ops-control/cmd/controllers/parameter"
 	"google.golang.org/grpc"
@@ -19,12 +21,6 @@ const rootCmdUse = "controllers"
 
 var (
 	cfgFile string
-
-	listenAddr               string
-	enableTls                bool
-	tlsKey                   string
-	tlsCert                  string
-	grpcMaxConcurrentStreams int
 
 	grpcServerListener net.Listener
 	grpcServer         *grpc.Server
@@ -51,7 +47,10 @@ var (
 
 			opts := []grpc.ServerOption{}
 
-			if enableTls {
+			if viper.GetBool("grpcServer.enableTls") {
+
+				tlsCert := viper.GetString("grpcServer.tls.cert")
+				tlsKey := viper.GetString("grpcServer.tls.key")
 
 				cert, err := tls.LoadX509KeyPair(tlsCert, tlsKey)
 				if err != nil {
@@ -66,6 +65,8 @@ var (
 				opts = append(opts, grpc.Creds(credentials.NewTLS(config)))
 
 			}
+
+			listenAddr := viper.GetString("grpcServer.listenAddr")
 
 			lis, err := net.Listen("tcp", listenAddr)
 			if err != nil {
@@ -89,14 +90,24 @@ func Execute() {
 
 func init() {
 
-	RootCmd.PersistentFlags().StringVar(&listenAddr, "listenAddr", "0.0.0.0:7070", "Bind address to store gRPC server")
-	RootCmd.PersistentFlags().BoolVar(&enableTls, "tls", false, "Enable TLS protocol only on gRPC server")
-	RootCmd.PersistentFlags().StringVar(&tlsKey, "tlsKey", "", "PEM encoded private key file path")
-	RootCmd.PersistentFlags().StringVar(&tlsCert, "tlsCert", "", "PEM encoded certificate file path")
-	RootCmd.PersistentFlags().IntVar(&grpcMaxConcurrentStreams, "grpcMaxConcurrentStreams", 1000000, "Max concurrent streams for gRPC server")
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/."+rootCmdUse+".yaml)")
+
+	RootCmd.PersistentFlags().String("listenAddr", "0.0.0.0:7070", "Bind address to store gRPC server")
+	RootCmd.PersistentFlags().Bool("tls", false, "Enable TLS protocol only on gRPC server")
+	RootCmd.PersistentFlags().String("tlsKey", "", "PEM encoded private key file path")
+	RootCmd.PersistentFlags().String("tlsCert", "", "PEM encoded certificate file path")
+	RootCmd.PersistentFlags().Int("grpcMaxConcurrentStreams", 1000000, "Max concurrent streams for gRPC server")
+
+	viper.BindPFlag("grpcServer.listenAddr", RootCmd.PersistentFlags().Lookup("listenAddr"))
+	viper.BindPFlag("grpcServer.tls.enable", RootCmd.PersistentFlags().Lookup("tls"))
+	viper.BindPFlag("grpcServer.tls.tlsKey", RootCmd.PersistentFlags().Lookup("tlsKey"))
+	viper.BindPFlag("grpcServer.tls.tlsCert", RootCmd.PersistentFlags().Lookup("tlsCert"))
+	viper.BindPFlag("grpcServer.grpc.maxConcurrentStreams", RootCmd.PersistentFlags().Lookup("grpcMaxConcurrentStreams"))
 
 	RootCmd.AddCommand(envoyctlr.EnvoyCmd)
 	RootCmd.AddCommand(parameterctlr.ParameterCmd)
+
+	cobra.OnInitialize(initConfig)
 
 }
 
@@ -108,6 +119,32 @@ func serveGrpcServer() {
 
 	if err := grpcServer.Serve(grpcServerListener); err != nil {
 		log.Fatalln("Failed to serve because", err)
+	}
+
+}
+
+func initConfig() {
+
+	if cfgFile != "" {
+		// Use config file from the flag.
+		viper.SetConfigFile(cfgFile)
+	} else {
+		// Find home directory.
+		home, err := os.UserHomeDir()
+		cobra.CheckErr(err)
+
+		// Search config in home directory with name "." + rootCmdUse (without extension).
+		viper.AddConfigPath(home)
+		viper.SetConfigType("yaml")
+		viper.SetConfigName("." + rootCmdUse)
+	}
+
+	viper.SetEnvPrefix("")
+	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	if err := viper.ReadInConfig(); err == nil {
+		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 
 }
