@@ -86,7 +86,7 @@ func (f *FrontProxy) addGrpcServiceCluster(service types.ServiceSummary) {
 	f.Resources[resource.ClusterType] = append(
 		f.Resources[resource.ClusterType],
 		&clusterv3.Cluster{
-			Name:                 aws.ToString(service.Id),
+			Name:                 aws.ToString(service.Name),
 			ConnectTimeout:       durationpb.New(15 * time.Second),
 			ClusterDiscoveryType: &clusterv3.Cluster_Type{Type: clusterv3.Cluster_EDS},
 			LbPolicy:             clusterv3.Cluster_ROUND_ROBIN,
@@ -136,7 +136,7 @@ func (f *FrontProxy) addHttp1ServiceCluster(service types.ServiceSummary) {
 	f.Resources[resource.ClusterType] = append(
 		f.Resources[resource.ClusterType],
 		&clusterv3.Cluster{
-			Name:                 aws.ToString(service.Id),
+			Name:                 aws.ToString(service.Name),
 			ConnectTimeout:       durationpb.New(15 * time.Second),
 			ClusterDiscoveryType: &clusterv3.Cluster_Type{Type: clusterv3.Cluster_EDS},
 			LbPolicy:             clusterv3.Cluster_ROUND_ROBIN,
@@ -223,7 +223,7 @@ func (f *FrontProxy) discoverService(ctx context.Context, client *servicediscove
 		},
 	)
 
-	clusterName := aws.ToString(service.Id)
+	clusterName := aws.ToString(service.Name)
 
 	var lbEndpoints []*endpointv3.LbEndpoint
 
