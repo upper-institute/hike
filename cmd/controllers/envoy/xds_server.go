@@ -41,6 +41,8 @@ var (
 
 					ctx := context.Background()
 
+					genericConfiguration.Reset()
+
 					if viper.GetBool("envoy.enableAwsEnvoyFrontProxy") {
 
 						log.Println("AWS front proxy discovery enabled")
@@ -66,8 +68,6 @@ var (
 						}
 
 					}
-
-					genericConfiguration.IncrementVersion()
 
 					snapshot, err := genericConfiguration.DoSnapshotCache()
 					if err != nil {
