@@ -8,6 +8,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
+	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -19,7 +20,10 @@ type GenericConfiguration struct {
 }
 
 func (g *GenericConfiguration) Reset() {
-	g.Resources = make(map[string][]types.Resource)
+	g.Resources = map[string][]types.Resource{
+		resource.ClusterType:  make([]types.Resource, 0),
+		resource.EndpointType: make([]types.Resource, 0),
+	}
 }
 
 func (g *GenericConfiguration) IncrementVersion() {
