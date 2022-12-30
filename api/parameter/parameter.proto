@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package opscontrol.api.parameter;
+
+enum ParameterType {
+    PARAMETER_TYPE_ENV_VAR = 0;
+    PARAMETER_TYPE_FILE = 1;
+    PARAMETER_TYPE_TEMPLATE_FILE = 2;
+}
+
+enum WellKnown {
+    WELL_KNOWN_NOOP = 0;
+    WELL_KNOWN_SERVICE_CLUSTER = 1;
+    WELL_KNOWN_INGRESS = 3;
+}
+

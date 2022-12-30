@@ -5,7 +5,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/upper-institute/ops-control/internal/envoy"
+	"github.com/upper-institute/ops-control/cmd/controllers/parameter"
+	"github.com/upper-institute/ops-control/internal/logger"
+	"github.com/upper-institute/ops-control/providers/envoy"
 	"google.golang.org/grpc"
 )
 
@@ -13,30 +15,46 @@ var (
 	EnvoyCmd = &cobra.Command{
 		Use:   "envoy",
 		Short: "Envoy related controls",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			logger.LoadLogger(viper.GetViper())
+		},
 	}
 )
 
 func init() {
 
-	EnvoyCmd.AddCommand(xdsServerCmd)
+	logger.AttachLoggingOptions(EnvoyCmd.PersistentFlags(), viper.GetViper())
 
-	EnvoyCmd.PersistentFlags().Duration("discoveryMinInterval", 5*time.Second, "Discovery minimum interval to reload")
-	EnvoyCmd.PersistentFlags().Bool("enableAwsEnvoyFrontProxy", false, "Enable AWS envoy front-proxy")
+	EnvoyCmd.PersistentFlags().Duration("discoveryMinInterval", 30*time.Second, "Discovery minimum interval to reload")
 
 	viper.BindPFlag("envoy.discoveryMinInterval", EnvoyCmd.PersistentFlags().Lookup("discoveryMinInterval"))
-	viper.BindPFlag("envoy.enableAwsEnvoyFrontProxy", EnvoyCmd.PersistentFlags().Lookup("enableAwsEnvoyFrontProxy"))
 
-	xdsServerCmd.PersistentFlags().String("nodeId", "default-node", "Tell envoy which node id to use")
-	xdsServerCmd.PersistentFlags().StringSlice("awsCloudMapNamespaces", []string{}, "AWS CloudMap (Service Discovery) namespaces to watch for services and instances")
+	xdsServerCmd.PersistentFlags().String("nodeId", "ops-control-node", "Tell envoy which node id to use")
+	xdsServerCmd.PersistentFlags().String("xdsClusterName", "xds-cluster", "Pointer to service discovery for resources")
+	xdsServerCmd.PersistentFlags().String("parameterPathTag", "parameter_path", "Tag in the resource to discover parameter envs and files")
 
 	viper.BindPFlag("envoy.nodeId", xdsServerCmd.PersistentFlags().Lookup("nodeId"))
+	viper.BindPFlag("envoy.xdsCluster.name", xdsServerCmd.PersistentFlags().Lookup("xdsClusterName"))
+	viper.BindPFlag("envoy.parameter.pathTag", xdsServerCmd.PersistentFlags().Lookup("parameterPathTag"))
+
+	xdsServerCmd.PersistentFlags().Bool("enableAwsCloudMap", false, "Enable AWS Cloud Map service discovery")
+	xdsServerCmd.PersistentFlags().StringSlice("awsCloudMapNamespaces", []string{}, "AWS CloudMap (Service Discovery) namespaces to watch for services and instances")
+
+	viper.BindPFlag("envoy.aws.cloudMap", xdsServerCmd.PersistentFlags().Lookup("enableAwsCloudMap"))
 	viper.BindPFlag("envoy.aws.cloudMap.namespaces", xdsServerCmd.PersistentFlags().Lookup("awsCloudMapNamespaces"))
+
+	parameter.AttachParameterPullOptions(xdsServerCmd.PersistentFlags())
+
+	EnvoyCmd.AddCommand(xdsServerCmd)
 
 }
 
 func RegisterServices(grpcServer *grpc.Server) bool {
 
+	log := logger.SugaredLogger
+
 	if xdsServer != nil {
+		log.Info("Registering XDS Services to gRPC Server")
 		envoy.RegisterXDSServices(grpcServer, xdsServer)
 		return true
 	}

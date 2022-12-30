@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/viper"
 	envoyctlr "github.com/upper-institute/ops-control/cmd/controllers/envoy"
 	parameterctlr "github.com/upper-institute/ops-control/cmd/controllers/parameter"
+	"github.com/upper-institute/ops-control/internal/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
@@ -39,6 +40,8 @@ var (
 			if isGrpcServer {
 				serveGrpcServer()
 			}
+
+			logger.FlushLogger()
 
 			return nil
 

@@ -1,0 +1,12 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/upper-institute/ops-control/pkg/api
+    except:
+      - buf.build/envoyproxy/envoy
+plugins:
+  - name: go
+    out: gen
+    opt:
+      - paths=source_relative

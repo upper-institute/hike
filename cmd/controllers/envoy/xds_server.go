@@ -2,14 +2,17 @@ package envoy
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/servicediscovery"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	awsctlr "github.com/upper-institute/ops-control/internal/aws"
-	envoyctlr "github.com/upper-institute/ops-control/internal/envoy"
+	"github.com/upper-institute/ops-control/cmd/controllers/parameter"
+	"github.com/upper-institute/ops-control/internal/logger"
+	sdinternal "github.com/upper-institute/ops-control/internal/service-discovery"
+	"github.com/upper-institute/ops-control/providers/aws"
+	"github.com/upper-institute/ops-control/providers/envoy"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	serverv3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
@@ -23,69 +26,84 @@ var (
 		Short: "Run xDS server",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			cache := cache.NewSnapshotCache(false, cache.IDHash{}, nil)
+			var (
+				envoyConfiguration = envoy.NewConfiguration(logger.SugaredLogger)
+				cache              = cache.NewSnapshotCache(false, cache.IDHash{}, nil)
+
+				serviceDiscoveryService sdinternal.ServiceDiscoveryService
+
+				discoveryMinInterval = viper.GetDuration("envoy.discoveryMinInterval")
+				nodeId               = viper.GetString("envoy.nodeId")
+				xdsClusterName       = viper.GetString("envoy.xdsCluster.name")
+				parameterPathTag     = viper.GetString("envoy.parameter.pathTag")
+
+				log = logger.SugaredLogger
+			)
+
+			ctx := context.Background()
+
+			parameterStore, parameterFileDownloader, err := parameter.LoadParameterProviders(ctx)
+			if err != nil {
+				return err
+			}
+
+			switch {
+			case viper.GetBool("envoy.aws.cloudMap"):
+
+				log.Infow("Envoy AWS Cloud Map xDS Server enabled")
+
+				config, err := config.LoadDefaultConfig(ctx)
+				if err != nil {
+					return err
+				}
+
+				cloudMapClient := servicediscovery.NewFromConfig(config)
+
+				serviceDiscoveryService = aws.NewCloudMapServiceDiscovery(
+					viper.GetStringSlice("envoy.aws.cloudMap.namespaces"),
+					parameterPathTag,
+					xdsClusterName,
+					cloudMapClient,
+					logger.SugaredLogger,
+					parameterStore,
+					parameterFileDownloader,
+				)
+
+			}
 
 			go func() {
 
-				var (
-					awsFrontProxy *awsctlr.FrontProxy
-
-					genericConfiguration = &envoyctlr.GenericConfiguration{}
-
-					discoveryMinInterval = viper.GetDuration("envoy.discoveryMinInterval")
-				)
-
 				for {
-
-					log.Println("Starting new discovery execution")
 
 					ctx := context.Background()
 
-					genericConfiguration.Reset()
+					log.Info("Starting discovery cycle")
 
-					if viper.GetBool("envoy.enableAwsEnvoyFrontProxy") {
-
-						log.Println("AWS front proxy discovery enabled")
-
-						if awsFrontProxy == nil {
-
-							config, err := config.LoadDefaultConfig(ctx)
-							if err != nil {
-								log.Fatalln(err.Error())
-							}
-
-							awsFrontProxy = &awsctlr.FrontProxy{
-								Config:               config,
-								NamespacesNames:      viper.GetStringSlice("envoy.aws.cloudMap.namespaces"),
-								GenericConfiguration: genericConfiguration,
-							}
-
-						}
-
-						err := awsFrontProxy.LoadConfigurationFromCloudMap(ctx)
-						if err != nil {
-							log.Fatalln(err.Error())
-						}
-
-					}
-
-					snapshot, err := genericConfiguration.DoSnapshotCache()
+					resources, err := serviceDiscoveryService.Discover(ctx)
 					if err != nil {
-						log.Fatalln(err.Error())
+						log.Fatalw(err.Error())
 					}
 
-					err = cache.SetSnapshot(ctx, viper.GetString("envoy.nodeId"), snapshot)
+					log.Info("End of discovery cycle")
+
+					envoyConfiguration.Resources = resources
+
+					snapshot, err := envoyConfiguration.DoSnapshot()
 					if err != nil {
-						log.Fatalln(err.Error())
+						log.Fatalw(err.Error())
 					}
 
-					log.Println("Service discovery execution ended successfully")
+					err = cache.SetSnapshot(ctx, nodeId, snapshot)
+					if err != nil {
+						log.Fatalw(err.Error())
+					}
+
+					log.Infow("Discovery process interval", "interval_duration", discoveryMinInterval)
 
 					time.Sleep(discoveryMinInterval)
 				}
-			}()
 
-			ctx := context.Background()
+			}()
 
 			xdsServer = serverv3.NewServer(ctx, cache, nil)
 
