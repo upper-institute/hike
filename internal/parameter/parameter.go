@@ -73,7 +73,7 @@ func (ps *ParameterSet) Add(key string, value string) error {
 		return SeparatorNotFoundErr
 	}
 
-	paramTypeStr := value[sep:]
+	paramTypeStr := value[:sep]
 	paramTypeVal, ok := parameter.ParameterType_value[paramTypeStr]
 	if !ok {
 		ps.logger.Warnw(InvalidParameterTypeErr.Error(), "key", key, "type_string", paramTypeStr)
@@ -90,7 +90,7 @@ func (ps *ParameterSet) Add(key string, value string) error {
 
 	case parameter.ParameterType_PARAMETER_TYPE_TEMPLATE_FILE, parameter.ParameterType_PARAMETER_TYPE_FILE:
 
-		source := value[:sep+1]
+		source := value[sep+1:]
 
 		sepSource := strings.Index(source, ParameterValueSeparator)
 

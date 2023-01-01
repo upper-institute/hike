@@ -36,6 +36,9 @@ func LoadParameterFileDownloader(ctx context.Context) (parameter.ParameterFileDo
 		s3Client := s3.NewFromConfig(config)
 
 		downloader = aws.NewS3ParameterFileDownloader(s3Client, logger.SugaredLogger)
+	default:
+
+		log.Warnln("No parameter file downloader configured")
 
 	}
 
@@ -64,6 +67,9 @@ func LoadParameterStore(ctx context.Context) (parameter.ParameterStore, error) {
 		ssmClient := ssm.NewFromConfig(config)
 
 		parameterStore = aws.NewSSMParameterStore(ssmClient, logger.SugaredLogger)
+	default:
+
+		log.Warnln("No parameter store configured")
 
 	}
 
