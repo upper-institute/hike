@@ -17,8 +17,6 @@ if [ "$1" = 'envoy' ]; then
     fi
 fi
 
-ops-control parameter template-file /etc/envoy/envoy.yaml /etc/envoy/envoy.rendered.yaml
-
 if [ "$ENVOY_UID" != "0" ] && [ "$USERID" = 0 ]; then
     if [ -n "$ENVOY_UID" ]; then
         usermod -u "$ENVOY_UID" envoy
