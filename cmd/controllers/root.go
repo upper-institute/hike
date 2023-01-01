@@ -31,23 +31,6 @@ var (
 		Short: "ops-control, functions to control cloud native operations",
 		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
 
-			isGrpcServer := false
-
-			if envoyctlr.RegisterServices(grpcServer) {
-				isGrpcServer = true
-			}
-
-			if isGrpcServer {
-				serveGrpcServer()
-			}
-
-			logger.FlushLogger()
-
-			return nil
-
-		},
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-
 			opts := []grpc.ServerOption{}
 
 			if viper.GetBool("grpcServer.enableTls") {
@@ -79,6 +62,21 @@ var (
 			grpcServerListener = lis
 
 			grpcServer = grpc.NewServer(opts...)
+
+			isGrpcServer := false
+
+			if envoyctlr.RegisterServices(grpcServer) {
+				isGrpcServer = true
+			}
+
+			if isGrpcServer {
+
+				serveGrpcServer()
+			}
+
+			logger.FlushLogger()
+
+			return nil
 
 		},
 	}
