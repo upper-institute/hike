@@ -1,4 +1,4 @@
-name: "[Front Proxy] Build & Push"
+name: "[Ops Control] Build & Push"
 
 on:
   push:
@@ -7,15 +7,15 @@ on:
     paths:
       - internal/**
       - cmd/**
-      - container/front-proxy/**
+      - container/ops-control/**
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/front-proxy
+  IMAGE_NAME: ${{ github.repository }}/ops-control
 
 jobs:
   build-and-push-image:
-    name: Build & push front proxy container image
+    name: Build & push ops control container image
     runs-on: ubuntu-22.04
 
     permissions:
@@ -50,7 +50,7 @@ jobs:
         oci: 'true'
         context: ./
         containerfiles: |
-          ./container/front-proxy/Containerfile
+          ./container/ops-control/Containerfile
         # build-args: |
         #   some_arg=some_value
 

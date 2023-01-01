@@ -1,0 +1,19 @@
+FROM golang:alpine as builder
+
+RUN mkdir /build
+ADD . /build/
+WORKDIR /build
+
+RUN CGO_ENABLED=0 go build -o ops-control ./cmd/main.go
+
+FROM debian:bookworm
+
+LABEL "organization.name"="upper-institute"
+LABEL "organization.repository"="ops-control"
+LABEL "repository.application"="ops-control"
+
+COPY --from=builder /build/ops-control /usr/local/bin/
+
+WORKDIR /etc/envoy/
+
+CMD ["ops-control", "-h"]
