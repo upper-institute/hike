@@ -3,6 +3,7 @@ package servicediscovery
 import (
 	corev3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	listenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	routev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	service_discovery "github.com/upper-institute/ops-control/gen/api/service-discovery"
@@ -178,17 +179,24 @@ func (s *ServiceDiscoveryState) buildIngress() error {
 
 func (s *ServiceDiscoveryState) buildRoutes() {
 
-	for _, vhs := range s.virtualHostsMap {
+	res := []types.Resource{}
 
-		res := []types.Resource{}
+	for ingressType, vhs := range s.virtualHostsMap {
 
-		for _, vh := range vhs {
-			res = append(res, vh)
+		routeConfig := &routev3.RouteConfiguration{
+			Name:         ingressType.String(),
+			VirtualHosts: make([]*routev3.VirtualHost, 0),
 		}
 
-		s.Resources[resource.RouteType] = res
+		for _, vh := range vhs {
+			routeConfig.VirtualHosts = append(routeConfig.VirtualHosts, vh)
+		}
+
+		res = append(res, routeConfig)
 
 	}
+
+	s.Resources[resource.RouteType] = res
 
 }
 
