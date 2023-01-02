@@ -37,11 +37,13 @@ func (s *s3ParameterFileDownloader) Download(ctx context.Context, source string,
 		return err
 	}
 
-	s.logger.Debugw("S3 GetObjectInput", "source", source, "host", u.Host, "path", u.Path)
+	key := u.Path[1:]
+
+	s.logger.Debugw("S3 GetObjectInput", "source", source, "host", u.Host, "key", key)
 
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(u.Host),
-		Key:    aws.String(u.Path),
+		Key:    aws.String(key),
 	}
 
 	buf := []byte{}
