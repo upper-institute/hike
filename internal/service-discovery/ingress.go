@@ -276,7 +276,7 @@ func makeHttpConnectionManagerFilter(input *service_discovery.Ingress) (*listene
 					ResourceApiVersion: resource.DefaultAPIVersion,
 					ConfigSourceSpecifier: &corev3.ConfigSource_ApiConfigSource{
 						ApiConfigSource: &corev3.ApiConfigSource{
-							ApiType:                   corev3.ApiConfigSource_AGGREGATED_GRPC,
+							ApiType:                   corev3.ApiConfigSource_GRPC,
 							TransportApiVersion:       resource.DefaultAPIVersion,
 							SetNodeOnFirstMessageOnly: true,
 							GrpcServices: []*corev3.GrpcService{{
