@@ -135,7 +135,12 @@ func (c *CloudMapServiceDiscovery) discoverService(ctx context.Context, sdState 
 	paramPathProvider := &cloudMapServiceTag_ParameterPathProvider{}
 	paramPathProvider.FromTags(c.parameterPathTag, listServiceTagsRes.Tags)
 
-	c.logger.Debugw("Load parameter path from service tag", "service_name", serviceName, "tag_key", c.parameterPathTag)
+	c.logger.Debugw("Load parameter path from service tag", "service_name", serviceName, "tag_key", c.parameterPathTag, "parameter_path_value", paramPathProvider.GetParameterPath())
+
+	if len(paramPathProvider.GetParameterPath()) == 0 {
+		c.logger.Infow("Ignoring service discovery 'case parameter_path is empty", "service_name", serviceName)
+		return nil
+	}
 
 	err = c.parameterStore.Load(ctx, paramPathProvider, paramSet)
 	if err != nil {
