@@ -213,7 +213,7 @@ func (ps *ParameterSet) ParseProtoJson(ctx context.Context, key string, m protor
 	buf := bytes.NewBuffer(nil)
 
 	ps.logger.Debugw(
-		"Parsing proto JSON from parameter file",
+		"Getting proto JSON from parameter file",
 		"key", key,
 	)
 
@@ -224,7 +224,7 @@ func (ps *ParameterSet) ParseProtoJson(ctx context.Context, key string, m protor
 	}
 
 	ps.logger.Debugw(
-		"Proto JSON parsed from parameter file",
+		"Proto JSON downloaded from parameter file",
 		"key", key,
 		"buffer_size", buf.Len(),
 	)
