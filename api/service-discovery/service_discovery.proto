@@ -16,6 +16,10 @@ message Routing {
     repeated string match_path_prefixes = 3;
 }
 
+message CorsPolicy {
+    repeated string expose_headers = 1;
+}
+
 message ServiceCluster {
     string service_cluster_name = 1;
     string xds_cluster_name = 2;
@@ -24,6 +28,7 @@ message ServiceCluster {
     IngressType ingress_type = 5;
     Routing routing = 6;
     uint32 upstream_port = 7;
+    CorsPolicy cors_policy = 8;
 }
 
 message Endpoint {

@@ -2,7 +2,7 @@ version: v1
 managed:
   enabled: true
   go_package_prefix:
-    default: github.com/upper-institute/ops-control/pkg/api
+    default: github.com/upper-institute/ops-control/gen/api
     except:
       - buf.build/envoyproxy/envoy
 plugins:

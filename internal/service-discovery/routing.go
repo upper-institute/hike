@@ -1,6 +1,7 @@
 package servicediscovery
 
 import (
+	"strings"
 	"time"
 
 	routev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
@@ -55,10 +56,9 @@ func (v virtualHosts) Add(serviceClusterInput *service_discovery.ServiceCluster)
 			Domains: routing.MatchDomains,
 			Routes:  []*routev3.Route{},
 			Cors: &routev3.CorsPolicy{
-				AllowMethods:  "GET, PUT, DELETE, POST, OPTIONS",
-				AllowHeaders:  "*",
-				ExposeHeaders: "*",
-				MaxAge:        "1728000",
+				AllowMethods: "GET, PUT, DELETE, POST, OPTIONS",
+				AllowHeaders: "*",
+				MaxAge:       "1728000",
 				AllowOriginStringMatch: []*matcherv3.StringMatcher{{
 					MatchPattern: &matcherv3.StringMatcher_Prefix{
 						Prefix: "*",
@@ -66,6 +66,16 @@ func (v virtualHosts) Add(serviceClusterInput *service_discovery.ServiceCluster)
 				}},
 			},
 		}
+	}
+
+	corsPolicy := serviceClusterInput.CorsPolicy
+
+	if corsPolicy != nil {
+
+		if len(corsPolicy.ExposeHeaders) > 0 {
+			virtualHost.Cors.ExposeHeaders = strings.Join(corsPolicy.ExposeHeaders, ",")
+		}
+
 	}
 
 	virtualHost.Routes = append(virtualHost.Routes, routes...)
