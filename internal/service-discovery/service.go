@@ -28,7 +28,7 @@ func makeServiceCluster(input *service_discovery.ServiceCluster) (*clusterv3.Clu
 				ConfigSourceSpecifier: &corev3.ConfigSource_ApiConfigSource{
 					ApiConfigSource: &corev3.ApiConfigSource{
 						TransportApiVersion:       resource.DefaultAPIVersion,
-						ApiType:                   corev3.ApiConfigSource_GRPC,
+						ApiType:                   corev3.ApiConfigSource_AGGREGATED_GRPC,
 						SetNodeOnFirstMessageOnly: true,
 						GrpcServices: []*corev3.GrpcService{{
 							TargetSpecifier: &corev3.GrpcService_EnvoyGrpc_{
