@@ -7,6 +7,8 @@ on:
     paths:
       - internal/**
       - cmd/**
+      - gen/**
+      - providers/**
       - container/front-proxy/**
 
 env:

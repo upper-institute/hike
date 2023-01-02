@@ -17,3 +17,4 @@ COPY --from=builder /build/ops-control /usr/local/bin/
 WORKDIR /etc/envoy/
 
 CMD ["ops-control", "-h"]
+

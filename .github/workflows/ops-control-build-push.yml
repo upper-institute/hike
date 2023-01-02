@@ -7,6 +7,8 @@ on:
     paths:
       - internal/**
       - cmd/**
+      - gen/**
+      - providers/**
       - container/ops-control/**
 
 env:
