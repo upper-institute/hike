@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var (
@@ -36,6 +37,8 @@ func LoadLogger(viperInstance *viper.Viper) {
 		Configuration.Level.SetLevel(zap.DebugLevel)
 
 	}
+
+	Configuration.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
 
 	logger, err := Configuration.Build()
 	if err != nil {
