@@ -166,6 +166,8 @@ func (ps *ParameterSet) GetFile(ctx context.Context, key string, buf io.Writer) 
 
 	case parameter.ParameterType_PARAMETER_TYPE_TEMPLATE_FILE:
 
+		ps.logger.Debugw("Get parameter template file", "key", key)
+
 		b := bytes.NewBuffer(nil)
 
 		err := ps.downloader.Download(ctx, paramFile.Source, b)
@@ -173,6 +175,8 @@ func (ps *ParameterSet) GetFile(ctx context.Context, key string, buf io.Writer) 
 			ps.logger.Warnw(err.Error(), "key", key)
 			return err
 		}
+
+		ps.logger.Debugw("Downloaded parameter template file", "key", key, "buffer_size", b.Len())
 
 		t, err := template.New(string(key)).Parse(b.String())
 		if err != nil {
@@ -188,11 +192,15 @@ func (ps *ParameterSet) GetFile(ctx context.Context, key string, buf io.Writer) 
 
 	case parameter.ParameterType_PARAMETER_TYPE_FILE:
 
+		ps.logger.Debugw("Get parameter file", "key", key)
+
 		err := ps.downloader.Download(ctx, paramFile.Source, buf)
 		if err != nil {
 			ps.logger.Warnw(err.Error(), "key", key)
 			return err
 		}
+
+		ps.logger.Debugw("Downloaded parameter file", "key", key)
 
 	}
 
@@ -204,11 +212,22 @@ func (ps *ParameterSet) ParseProtoJson(ctx context.Context, key string, m protor
 
 	buf := bytes.NewBuffer(nil)
 
+	ps.logger.Debugw(
+		"Parsing proto JSON from parameter file",
+		"key", key,
+	)
+
 	err := ps.GetFile(ctx, key, buf)
 	if err != nil {
 		ps.logger.Warnw(err.Error(), "key", key)
 		return err
 	}
+
+	ps.logger.Debugw(
+		"Proto JSON parsed from parameter file",
+		"key", key,
+		"buffer_size", buf.Len(),
+	)
 
 	return protojson.Unmarshal(buf.Bytes(), m)
 

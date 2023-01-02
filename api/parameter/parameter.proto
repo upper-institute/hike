@@ -11,6 +11,6 @@ enum ParameterType {
 enum WellKnown {
     WELL_KNOWN_NOOP = 0;
     WELL_KNOWN_SERVICE_CLUSTER = 1;
-    WELL_KNOWN_INGRESS = 3;
+    WELL_KNOWN_INGRESS = 2;
 }
 
