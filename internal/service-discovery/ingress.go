@@ -22,6 +22,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	service_discovery "github.com/upper-institute/ops-control/gen/api/service-discovery"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func makeGrpcWebMatcher(extensionConfig *corev3.TypedExtensionConfig) (*http_connection_managerv3.HttpFilter, error) {
@@ -136,6 +137,9 @@ func makeHealthCheckFilter(input *service_discovery.Ingress) (*http_connection_m
 
 	healthCheck := &health_checkv3.HealthCheck{
 		ClusterMinHealthyPercentages: healthyPercentages,
+		PassThroughMode: &wrapperspb.BoolValue{
+			Value: false,
+		},
 		Headers: []*routev3.HeaderMatcher{
 			{
 				Name: ":path",
