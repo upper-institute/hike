@@ -11,6 +11,7 @@ import (
 	routev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	streamv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/stream/v3"
 	matchingv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/common/matching/v3"
+	actionv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/common/matcher/action/v3"
 	corsv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	grpcwebv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_web/v3"
 	health_checkv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/health_check/v3"
@@ -36,6 +37,13 @@ func makeGrpcWebMatcher(extensionConfig *corev3.TypedExtensionConfig) (*http_con
 		return nil, err
 	}
 
+	skipAction := &actionv3.SkipFilter{}
+
+	skipActionAny, err := anypb.New(skipAction)
+	if err != nil {
+		return nil, err
+	}
+
 	extensionWithMatcher := &matchingv3.ExtensionWithMatcher{
 		ExtensionConfig: extensionConfig,
 		XdsMatcher: &v3.Matcher{
@@ -43,6 +51,14 @@ func makeGrpcWebMatcher(extensionConfig *corev3.TypedExtensionConfig) (*http_con
 				MatcherList: &v3.Matcher_MatcherList{
 					Matchers: []*v3.Matcher_MatcherList_FieldMatcher{
 						{
+							OnMatch: &v3.Matcher_OnMatch{
+								OnMatch: &v3.Matcher_OnMatch_Action{
+									Action: &xdscorev3.TypedExtensionConfig{
+										Name:        "skip",
+										TypedConfig: skipActionAny,
+									},
+								},
+							},
 							Predicate: &v3.Matcher_MatcherList_Predicate{
 								MatchType: &v3.Matcher_MatcherList_Predicate_NotMatcher{
 									NotMatcher: &v3.Matcher_MatcherList_Predicate{
