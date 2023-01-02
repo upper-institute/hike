@@ -226,6 +226,13 @@ func makeHttpFilters(input *service_discovery.Ingress) ([]*http_connection_manag
 
 	if input.GrpcWeb != nil && input.GrpcWeb.Enabled {
 
+		grpcWebFilter, err := makeGrpcWebFilter()
+		if err != nil {
+			return nil, err
+		}
+
+		httpFilters = append(httpFilters, grpcWebFilter)
+
 		if input.GrpcWeb.JwtAuthentication != nil {
 
 			jwtAuthnAny, err := anypb.New(input.GrpcWeb.JwtAuthentication)
@@ -244,13 +251,6 @@ func makeHttpFilters(input *service_discovery.Ingress) ([]*http_connection_manag
 			httpFilters = append(httpFilters, jwtAuthFilter)
 
 		}
-
-		grpcWebFilter, err := makeGrpcWebFilter()
-		if err != nil {
-			return nil, err
-		}
-
-		httpFilters = append(httpFilters, grpcWebFilter)
 
 	}
 
