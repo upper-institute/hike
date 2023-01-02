@@ -18,6 +18,9 @@ message Routing {
 
 message CorsPolicy {
     repeated string expose_headers = 1;
+    repeated string allow_methods = 2;
+    repeated string allow_headers = 3;
+    string max_age = 4;
 }
 
 message ServiceCluster {

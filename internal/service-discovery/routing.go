@@ -56,7 +56,7 @@ func (v virtualHosts) Add(serviceClusterInput *service_discovery.ServiceCluster)
 			Domains: routing.MatchDomains,
 			Routes:  []*routev3.Route{},
 			Cors: &routev3.CorsPolicy{
-				AllowMethods: "GET, PUT, DELETE, POST, OPTIONS",
+				AllowMethods: "*",
 				AllowHeaders: "*",
 				MaxAge:       "1728000",
 				AllowOriginStringMatch: []*matcherv3.StringMatcher{{
@@ -74,6 +74,18 @@ func (v virtualHosts) Add(serviceClusterInput *service_discovery.ServiceCluster)
 
 		if len(corsPolicy.ExposeHeaders) > 0 {
 			virtualHost.Cors.ExposeHeaders = strings.Join(corsPolicy.ExposeHeaders, ",")
+		}
+
+		if len(corsPolicy.AllowHeaders) > 0 {
+			virtualHost.Cors.AllowHeaders = strings.Join(corsPolicy.AllowHeaders, ",")
+		}
+
+		if len(corsPolicy.AllowMethods) > 0 {
+			virtualHost.Cors.AllowMethods = strings.Join(corsPolicy.AllowMethods, ",")
+		}
+
+		if len(corsPolicy.MaxAge) > 0 {
+			virtualHost.Cors.MaxAge = corsPolicy.MaxAge
 		}
 
 	}

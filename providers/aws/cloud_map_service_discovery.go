@@ -214,7 +214,7 @@ func (c *CloudMapServiceDiscovery) discoverService(ctx context.Context, sdState 
 				continue
 			}
 
-			c.logger.Infow("Add endpoint from AWS Cloud Map service instance", "service_name", serviceName, "instance_ipv4", address)
+			c.logger.Infow("Add endpoint from AWS Cloud Map service instance", "service_name", serviceName, "instance_ipv4", address, "upstream_port", addServiceCluster.UpstreamPort)
 
 			addServiceEndpointsInput.Endpoints = append(
 				addServiceEndpointsInput.Endpoints,
