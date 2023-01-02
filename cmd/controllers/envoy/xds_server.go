@@ -98,7 +98,7 @@ var (
 						log.Fatalw(err.Error())
 					}
 
-					log.Infow("Discovery process interval", "interval_duration", discoveryMinInterval)
+					log.Infow("Discovery process interval", "interval_duration", discoveryMinInterval.String())
 
 					time.Sleep(discoveryMinInterval)
 				}

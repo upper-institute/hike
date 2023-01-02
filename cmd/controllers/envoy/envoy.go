@@ -5,7 +5,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/upper-institute/ops-control/cmd/controllers/parameter"
 	"github.com/upper-institute/ops-control/internal/logger"
 	"github.com/upper-institute/ops-control/providers/envoy"
 	"google.golang.org/grpc"
@@ -22,8 +21,6 @@ var (
 )
 
 func init() {
-
-	logger.AttachLoggingOptions(EnvoyCmd.PersistentFlags(), viper.GetViper())
 
 	EnvoyCmd.PersistentFlags().Duration("discoveryMinInterval", 30*time.Second, "Discovery minimum interval to reload")
 
@@ -42,8 +39,6 @@ func init() {
 
 	viper.BindPFlag("envoy.aws.cloudMap", xdsServerCmd.PersistentFlags().Lookup("enableAwsCloudMap"))
 	viper.BindPFlag("envoy.aws.cloudMap.namespaces", xdsServerCmd.PersistentFlags().Lookup("awsCloudMapNamespaces"))
-
-	parameter.AttachParameterPullOptions(xdsServerCmd.PersistentFlags())
 
 	EnvoyCmd.AddCommand(xdsServerCmd)
 

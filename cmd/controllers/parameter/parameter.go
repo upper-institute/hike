@@ -29,19 +29,15 @@ func AttachParameterPullOptions(flagSet *pflag.FlagSet) {
 
 func init() {
 
-	logger.AttachLoggingOptions(ParameterCmd.PersistentFlags(), viper.GetViper())
-
 	ParameterCmd.PersistentFlags().String("parameterPath", "", "Path to manipulate parameter")
 
 	viper.BindPFlag("parameter.path", ParameterCmd.PersistentFlags().Lookup("parameterPath"))
-
-	AttachParameterPullOptions(pullCmd.PersistentFlags())
 
 	pullCmd.PersistentFlags().Bool("loadProcessEnvs", true, "Load envs from process")
 
 	viper.BindPFlag("parameter.load.processEnvs", pullCmd.PersistentFlags().Lookup("loadProcessEnvs"))
 
-	pullCmd.PersistentFlags().Bool("saveAllFiles", true, "Save all files from parameter store")
+	pullCmd.PersistentFlags().Bool("saveAllFiles", false, "Save all files from parameter store")
 	pullCmd.PersistentFlags().String("saveFileFromKey", "", "Save files only in the specified key")
 
 	viper.BindPFlag("parameter.saveAllFiles", pullCmd.PersistentFlags().Lookup("saveAllFiles"))

@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	envoyctlr "github.com/upper-institute/ops-control/cmd/controllers/envoy"
+	"github.com/upper-institute/ops-control/cmd/controllers/parameter"
 	parameterctlr "github.com/upper-institute/ops-control/cmd/controllers/parameter"
 	"github.com/upper-institute/ops-control/internal/logger"
 	"google.golang.org/grpc"
@@ -18,7 +19,7 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-const rootCmdUse = "controllers"
+const rootCmdUse = "ops-control"
 
 var (
 	cfgFile string
@@ -107,6 +108,9 @@ func init() {
 
 	RootCmd.AddCommand(envoyctlr.EnvoyCmd)
 	RootCmd.AddCommand(parameterctlr.ParameterCmd)
+
+	parameter.AttachParameterPullOptions(RootCmd.PersistentFlags())
+	logger.AttachLoggingOptions(RootCmd.PersistentFlags(), viper.GetViper())
 
 	cobra.OnInitialize(initConfig)
 
