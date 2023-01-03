@@ -110,10 +110,12 @@ func makeGrpcWebFilter() (*http_connection_managerv3.HttpFilter, error) {
 		return nil, err
 	}
 
-	return makeGrpcWebMatcher(&corev3.TypedExtensionConfig{
-		Name:        wellknown.GRPCWeb,
-		TypedConfig: grpcWebFilterAny,
-	})
+	return &http_connection_managerv3.HttpFilter{
+		Name: wellknown.GRPCWeb,
+		ConfigType: &http_connection_managerv3.HttpFilter_TypedConfig{
+			TypedConfig: grpcWebFilterAny,
+		},
+	}, nil
 
 }
 
@@ -240,12 +242,11 @@ func makeHttpFilters(input *service_discovery.Ingress) ([]*http_connection_manag
 				return nil, err
 			}
 
-			jwtAuthFilter, err := makeGrpcWebMatcher(&corev3.TypedExtensionConfig{
-				Name:        "envoy.filters.http.jwt",
-				TypedConfig: jwtAuthnAny,
-			})
-			if err != nil {
-				return nil, err
+			jwtAuthFilter := &http_connection_managerv3.HttpFilter{
+				Name: "envoy.filters.http.jwt",
+				ConfigType: &http_connection_managerv3.HttpFilter_TypedConfig{
+					TypedConfig: jwtAuthnAny,
+				},
 			}
 
 			httpFilters = append(httpFilters, jwtAuthFilter)
