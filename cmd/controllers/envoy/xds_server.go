@@ -2,13 +2,16 @@ package envoy
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/route53"
 	"github.com/aws/aws-sdk-go-v2/service/servicediscovery"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/upper-institute/ops-control/cmd/controllers/parameter"
+	domainregistry "github.com/upper-institute/ops-control/internal/domain-registry"
 	"github.com/upper-institute/ops-control/internal/logger"
 	sdinternal "github.com/upper-institute/ops-control/internal/service-discovery"
 	"github.com/upper-institute/ops-control/providers/aws"
@@ -31,6 +34,7 @@ var (
 				cache              = cache.NewSnapshotCache(false, cache.IDHash{}, nil)
 
 				serviceDiscoveryService sdinternal.ServiceDiscoveryService
+				domainRegistryService   domainregistry.DomainRegistryService
 
 				discoveryMinInterval = viper.GetDuration("envoy.discoveryMinInterval")
 				nodeId               = viper.GetString("envoy.nodeId")
@@ -45,6 +49,25 @@ var (
 			parameterStore, parameterFileDownloader, err := parameter.LoadParameterProviders(ctx)
 			if err != nil {
 				return err
+			}
+
+			switch {
+			case viper.GetBool("envoy.aws.route53"):
+
+				log.Infow("AWS Route 53 domain registryt enabled")
+
+				config, err := config.LoadDefaultConfig(ctx)
+				if err != nil {
+					return err
+				}
+
+				route53Client := route53.NewFromConfig(config)
+
+				domainRegistryService = aws.NewRoute53DomainRegistry(
+					route53Client,
+					logger.SugaredLogger,
+				)
+
 			}
 
 			switch {
@@ -65,10 +88,18 @@ var (
 					xdsClusterName,
 					cloudMapClient,
 					logger.SugaredLogger,
-					parameterStore,
-					parameterFileDownloader,
 				)
 
+			default:
+				return fmt.Errorf("You need to enable a service discovery service")
+
+			}
+
+			serviceDiscoveryService.SetParameterStore(parameterStore)
+			serviceDiscoveryService.SetParameterFileDownloader(parameterFileDownloader)
+
+			if domainRegistryService != nil {
+				serviceDiscoveryService.SetDomainRegistry(domainRegistryService)
 			}
 
 			go func() {

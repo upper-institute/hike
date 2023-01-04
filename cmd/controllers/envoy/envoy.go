@@ -39,6 +39,7 @@ func init() {
 
 	viper.BindPFlag("envoy.aws.cloudMap", xdsServerCmd.PersistentFlags().Lookup("enableAwsCloudMap"))
 	viper.BindPFlag("envoy.aws.cloudMap.namespaces", xdsServerCmd.PersistentFlags().Lookup("awsCloudMapNamespaces"))
+	viper.BindPFlag("envoy.aws.route53", xdsServerCmd.PersistentFlags().Lookup("awsCloudMapNamespaces"))
 
 	EnvoyCmd.AddCommand(xdsServerCmd)
 

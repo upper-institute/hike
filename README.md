@@ -13,3 +13,7 @@ Create a branch (/vault/[vault_id]) and put a public key (RSA or Curve25519) and
 ### 4. Seal Vault
 
 ### 5. Push Branch
+
+- Domínio human friendly
+- TLS com letsencrypt
+- 
