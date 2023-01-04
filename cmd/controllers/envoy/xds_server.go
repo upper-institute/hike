@@ -54,7 +54,7 @@ var (
 			switch {
 			case viper.GetBool("envoy.aws.route53"):
 
-				log.Infow("AWS Route 53 domain registryt enabled")
+				log.Infow("AWS Route 53 domain registry enabled")
 
 				config, err := config.LoadDefaultConfig(ctx)
 				if err != nil {

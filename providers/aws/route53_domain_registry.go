@@ -82,9 +82,7 @@ func (id *route53DomainRegistry) changeRecord(registration *route53DomainRegistr
 		HostedZoneId: aws.String(registration.hostedZoneId),
 		ChangeBatch: &types.ChangeBatch{
 			Comment: aws.String("Managed by Ops Control"),
-			Changes: []types.Change{{
-				Action: types.ChangeActionUpsert,
-			}},
+			Changes: changes,
 		},
 	}
 
