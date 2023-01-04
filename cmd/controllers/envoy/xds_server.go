@@ -99,6 +99,9 @@ var (
 			serviceDiscoveryService.SetParameterFileDownloader(parameterFileDownloader)
 
 			if domainRegistryService != nil {
+
+				log.Info("Domain registry enabled")
+
 				serviceDiscoveryService.SetDomainRegistry(domainRegistryService)
 			}
 
