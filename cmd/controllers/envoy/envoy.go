@@ -36,7 +36,7 @@ func init() {
 
 	xdsServerCmd.PersistentFlags().Bool("enableAwsCloudMap", false, "Enable AWS Cloud Map service discovery")
 	xdsServerCmd.PersistentFlags().StringSlice("awsCloudMapNamespaces", []string{}, "AWS CloudMap (Service Discovery) namespaces to watch for services and instances")
-	xdsServerCmd.PersistentFlags().Bool("awsRoute53", false, "AWS Route53 domain registry for service discovery (the zone must match")
+	xdsServerCmd.PersistentFlags().Bool("enableAwsRoute53", false, "AWS Route53 domain registry for service discovery (the zone must match")
 
 	viper.BindPFlag("envoy.aws.cloudMap", xdsServerCmd.PersistentFlags().Lookup("enableAwsCloudMap"))
 	viper.BindPFlag("envoy.aws.cloudMap.namespaces", xdsServerCmd.PersistentFlags().Lookup("awsCloudMapNamespaces"))
