@@ -62,12 +62,12 @@ func (id *route53DomainRegistry) listRecords(registration *route53DomainRegistry
 
 	for _, recordSet := range listResourceRecordSetsOutput.ResourceRecordSets {
 
-		recordFqdn := aws.ToString(recordSet.Name)
+		recordFqdn := strings.TrimRight(aws.ToString(recordSet.Name), domainSeparator)
 
-		registration.logger.Debugw("Found record", "record_fqdn", recordFqdn)
+		registration.logger.Debugw("Found record", "record_fqdn", recordFqdn, "match_fqdn", registration.fqdn)
 
 		if recordFqdn == registration.fqdn {
-			registration.logger.Debugw("Match", "record_fqdn", recordFqdn)
+			registration.logger.Debugw("Match existing record", "record_fqdn", recordFqdn)
 			records = append(records, &recordSet)
 		}
 	}
@@ -105,7 +105,7 @@ func (id *route53DomainRegistry) registerCname(registration *route53DomainRegist
 
 	if len(recordSet) == 0 {
 
-		registration.logger.Infow("Changing record (action create)", "record_fqdn", registration.fqdn)
+		registration.logger.Infow("Inserting record (action create)", "record_fqdn", registration.fqdn)
 
 		_, err = id.changeRecord(registration, []types.Change{{
 			Action: types.ChangeActionCreate,
@@ -123,6 +123,16 @@ func (id *route53DomainRegistry) registerCname(registration *route53DomainRegist
 	}
 
 	for _, record := range recordSet {
+
+		for _, rr := range record.ResourceRecords {
+
+			if aws.ToString(rr.Value) == registration.ingressDomain.CnameValue {
+
+				registration.logger.Debugw("No need to update cname value, skipping action", "record_fqdn", aws.ToString(record.Name))
+
+				return nil
+			}
+		}
 
 		registration.logger.Infow("Changing record (action upsert)", "record_fqdn", aws.ToString(record.Name))
 
