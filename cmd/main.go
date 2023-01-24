@@ -1,9 +1,9 @@
 package main
 
 import (
-	controllers "github.com/upper-institute/ops-control/cmd/controllers"
+	cmd "github.com/upper-institute/ops-control/cmd/ops-control"
 )
 
 func main() {
-	controllers.Execute()
+	cmd.Execute()
 }

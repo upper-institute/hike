@@ -73,7 +73,7 @@ static_resources:
                             max_stream_duration:
                               grpc_timeout_header_max: 60s
                         
-                        - match: { prefix: '/opscontrol.service1' }
+                        - match: { prefix: '/wealth.proto.service1' }
                           route:
                             cluster: service1
                             timeout: 60s

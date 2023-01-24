@@ -1,16 +1,20 @@
 package envoy
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	domainregistry "github.com/upper-institute/ops-control/internal/domain-registry"
 	"github.com/upper-institute/ops-control/internal/logger"
 	"github.com/upper-institute/ops-control/providers/envoy"
 	"google.golang.org/grpc"
 )
 
 var (
+	http01Provider *domainregistry.HTTP01Provider
+
 	EnvoyCmd = &cobra.Command{
 		Use:   "envoy",
 		Short: "Envoy related controls",
@@ -46,12 +50,13 @@ func init() {
 
 }
 
-func RegisterServices(grpcServer *grpc.Server) bool {
+func RegisterServices(grpcServer *grpc.Server, serverMux *http.ServeMux) bool {
 
 	log := logger.SugaredLogger
 
 	if xdsServer != nil {
 		log.Info("Registering XDS Services to gRPC Server")
+		http01Provider.AddToServeMux(serverMux)
 		envoy.RegisterXDSServices(grpcServer, xdsServer)
 		return true
 	}

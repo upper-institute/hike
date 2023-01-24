@@ -9,3 +9,6 @@ import (
 type DomainRegistryService interface {
 	RegisterIngressDomain(ctx context.Context, ingressDomain *service_discovery.IngressDomain) error
 }
+
+type TLS interface {
+}

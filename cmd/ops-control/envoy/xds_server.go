@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/servicediscovery"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/upper-institute/ops-control/cmd/controllers/parameter"
+	"github.com/upper-institute/ops-control/cmd/ops-control/parameter"
 	domainregistry "github.com/upper-institute/ops-control/internal/domain-registry"
 	"github.com/upper-institute/ops-control/internal/logger"
 	sdinternal "github.com/upper-institute/ops-control/internal/service-discovery"
@@ -46,7 +46,9 @@ var (
 
 			ctx := context.Background()
 
-			parameterStore, parameterFileDownloader, err := parameter.LoadParameterProviders(ctx)
+			http01Provider = domainregistry.NewHTTP01Provider(logger.SugaredLogger)
+
+			paramCacheOpts, err := parameter.LoadParameterCacheOptions(ctx)
 			if err != nil {
 				return err
 			}
@@ -95,8 +97,11 @@ var (
 
 			}
 
-			serviceDiscoveryService.SetParameterStore(parameterStore)
-			serviceDiscoveryService.SetParameterFileDownloader(parameterFileDownloader)
+			serviceDiscoveryService.SetParameterCacheOptions(paramCacheOpts)
+
+			serviceDiscoveryService.SetTLSOptions(&domainregistry.TLSOptions{
+				HTTP01Provider: http01Provider,
+			})
 
 			if domainRegistryService != nil {
 

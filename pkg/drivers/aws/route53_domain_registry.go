@@ -1,4 +1,4 @@
-package aws
+package awsdriver
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/route53"
 	"github.com/aws/aws-sdk-go-v2/service/route53/types"
 	service_discovery "github.com/upper-institute/ops-control/gen/api/service-discovery"
-	domainregistry "github.com/upper-institute/ops-control/internal/domain-registry"
+	"github.com/upper-institute/ops-control/pkg/servicemesh"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -19,7 +19,7 @@ const domainSeparator = "."
 
 type route53DomainRegistry_Registration struct {
 	ctx           context.Context
-	ingressDomain *service_discovery.IngressDomain
+	ingressDomain *service_discovery.DnsRecord
 
 	logger *zap.SugaredLogger
 
@@ -37,7 +37,7 @@ type route53DomainRegistry struct {
 func NewRoute53DomainRegistry(
 	route53Client *route53.Client,
 	logger *zap.SugaredLogger,
-) domainregistry.DomainRegistryService {
+) servicemesh.EnvoyDiscoveryService {
 	return &route53DomainRegistry{
 		route53Client: route53Client,
 		logger:        logger,
@@ -153,7 +153,7 @@ func (id *route53DomainRegistry) registerCname(registration *route53DomainRegist
 
 }
 
-func (id *route53DomainRegistry) RegisterIngressDomain(ctx context.Context, ingressDomain *service_discovery.IngressDomain) error {
+func (id *route53DomainRegistry) RegisterDnsRecord(ctx context.Context, ingressDomain *service_discovery.DnsRecord) error {
 
 	logger := id.logger.With("zone", ingressDomain.Zone, "record_name", ingressDomain.RecordName)
 
@@ -197,4 +197,8 @@ func (id *route53DomainRegistry) RegisterIngressDomain(ctx context.Context, ingr
 	}
 
 	return nil
+}
+
+func (r *route53DomainRegistry) Discover(ctx context.Context, svcCh chan *service_discovery.Service) {
+
 }

@@ -5,15 +5,20 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	envoyctlr "github.com/upper-institute/ops-control/cmd/controllers/envoy"
-	"github.com/upper-institute/ops-control/cmd/controllers/parameter"
-	parameterctlr "github.com/upper-institute/ops-control/cmd/controllers/parameter"
+	envoyctlr "github.com/upper-institute/ops-control/cmd/ops-control/envoy"
+	"github.com/upper-institute/ops-control/cmd/ops-control/parameter"
+	parameterctlr "github.com/upper-institute/ops-control/cmd/ops-control/parameter"
+
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"github.com/upper-institute/ops-control/internal/logger"
+	otelgrpc "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
@@ -24,15 +29,29 @@ const rootCmdUse = "ops-control"
 var (
 	cfgFile string
 
-	grpcServerListener net.Listener
-	grpcServer         *grpc.Server
+	serverListener net.Listener
+	grpcServer     *grpc.Server
+	serverMux      = http.NewServeMux()
 
 	RootCmd = &cobra.Command{
 		Use:   rootCmdUse,
 		Short: "ops-control, functions to control cloud native operations",
 		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
 
-			opts := []grpc.ServerOption{}
+			opts := []grpc.ServerOption{
+				grpc.StreamInterceptor(
+					grpc_middleware.ChainStreamServer(
+						otelgrpc.StreamServerInterceptor(),
+						grpc_zap.StreamServerInterceptor(logger.Logger),
+					),
+				),
+				grpc.UnaryInterceptor(
+					grpc_middleware.ChainUnaryServer(
+						otelgrpc.UnaryServerInterceptor(),
+						grpc_zap.UnaryServerInterceptor(logger.Logger),
+					),
+				),
+			}
 
 			if viper.GetBool("grpcServer.enableTls") {
 
@@ -60,18 +79,17 @@ var (
 				log.Fatalln("failed to listen to store address", listenAddr, "because", err)
 			}
 
-			grpcServerListener = lis
+			serverListener = lis
 
 			grpcServer = grpc.NewServer(opts...)
 
 			isGrpcServer := false
 
-			if envoyctlr.RegisterServices(grpcServer) {
+			if envoyctlr.RegisterServices(grpcServer, serverMux) {
 				isGrpcServer = true
 			}
 
 			if isGrpcServer {
-
 				serveGrpcServer()
 			}
 
@@ -116,13 +134,28 @@ func init() {
 
 }
 
+type grpcMatcher struct{}
+
+func (g *grpcMatcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	ct := r.Header.Get("Content-Type")
+	if r.ProtoMajor == 2 && strings.Contains(ct, "application/grpc") {
+		grpcServer.ServeHTTP(w, r)
+	} else {
+		serverMux.ServeHTTP(w, r)
+	}
+
+}
+
 func serveGrpcServer() {
 
 	reflection.Register(grpcServer)
 
-	log.Println("Server listening at:", grpcServerListener.Addr())
+	log.Println("Server listening at:", serverListener.Addr())
 
-	if err := grpcServer.Serve(grpcServerListener); err != nil {
+	server := &http.Server{Handler: &grpcMatcher{}}
+
+	if err := server.Serve(serverListener); err != nil {
 		log.Fatalln("Failed to serve because", err)
 	}
 

@@ -3,83 +3,61 @@ syntax = "proto3";
 package opscontrol.api.servicediscovery;
 
 import "envoy/config/core/v3/address.proto";
+import "envoy/config/cluster/v3/cluster.proto";
+import "envoy/config/listener/v3/listener.proto";
+import "envoy/config/endpoint/v3/endpoint.proto";
+import "envoy/config/route/v3/route.proto";
+
+import "envoy/extensions/filters/http/cors/v3/cors.proto";
 import "envoy/extensions/filters/http/jwt_authn/v3/config.proto";
+import "envoy/extensions/filters/http/health_check/v3/health_check.proto";
+import "envoy/extensions/filters/http/grpc_web/v3/grpc_web.proto";
+
 import "google/protobuf/duration.proto";
 
-enum ServiceType {
-    SERVICE_TYPE_HTTP1_SERVER = 0;
-    SERVICE_TYPE_GRPC_SERVICE = 1;
+message AcmeProtocolCertificate {
+    // Example:
+    // Let's Encrypt production: https://acme-v02.api.letsencrypt.org/directory
+    // Let's Encrypt staging (default): https://acme-staging-v02.api.letsencrypt.org/directory
+    string ca_dir_url = 1;
+    // Account e-mail
+    string account_email = 2;
+    // Parameter key to a file parameter type to store certificate data
+    string certificate_parameter_key = 3;
+    // Parameter key to a file parameter type to store account data
+    string account_parameter_key = 4;
+    // KeyType: EC256, EC384. RSA2048, RSA4096, RSA8192
+    // Default: RSA4096
+    string key_type = 5;
+    string parameter_file_source = 6;
+    // Optional, default is ops-control/latest
+    string user_agent = 7;
+    repeated string domains = 8;
 }
 
-message Routing {
-    string virtual_host_name = 1;
-    repeated string match_domains = 2;
-    repeated string match_path_prefixes = 3;
-}
-
-message CorsPolicy {
-    repeated string expose_headers = 1;
-    repeated string allow_methods = 2;
-    repeated string allow_headers = 3;
-    string max_age = 4;
-}
-
-message ServiceCluster {
-    string service_cluster_name = 1;
-    string xds_cluster_name = 2;
-    ServiceType service_type = 3;
-    uint32 min_healthy_percentage = 4;
-    IngressType ingress_type = 5;
-    Routing routing = 6;
-    uint32 upstream_port = 7;
-    CorsPolicy cors_policy = 8;
-}
-
-message Endpoint {
-    string address = 1;
-    uint32 port_value = 2;
-    envoy.config.core.v3.SocketAddress.Protocol protocol = 3;
-}
-
-message ServiceEndpoints {
-    string service_cluster_name = 1;
-
-    repeated Endpoint endpoints = 2;
-}
-
-enum IngressType {
-    INGRESS_TYPE_NO_INGRESS = 0;
-    INGRESS_TYPE_WEB_SECURE_TRAFFIC = 1;
-}
-
-message HealthCheck {
-    string path = 1;
-    map<string, uint32> cluster_min_healthy_percentages = 2;
-}
-
-message GrpcWeb {
-    bool enabled = 1;
-    envoy.extensions.filters.http.jwt_authn.v3.JwtAuthentication jwt_authentication = 2;
-}
-
-message IngressTls {
-    
-}
-
-message IngressDomain {
+message DnsRecord {
     string zone = 1;
     string record_name = 2;
     google.protobuf.Duration ttl = 3;
     string cname_value = 4;
 }
 
-message Ingress {
-    IngressType ingress_type = 1;
-    string xds_cluster_name = 2;
-    uint32 listen_port = 3;
-    string listen_address = 4;
-    bool enable_cors = 5;
-    HealthCheck health_check = 6;
-    GrpcWeb grpc_web = 7;
-    repeated IngressDomain domains = 8;
+message Service {
+    string group_name = 14;
+    string service_id = 15;
+    string xds_cluster_name = 1;
+    uint32 listen_port = 2;
+    string listen_address = 3;
+
+    envoy.extensions.filters.http.cors.v3.CorsPolicy cors_policy = 4; 
+    envoy.extensions.filters.http.health_check.v3.HealthCheck health_check = 5;
+    envoy.extensions.filters.http.grpc_web.v3.GrpcWeb grpc_web = 6;
+    envoy.extensions.filters.http.jwt_authn.v3.JwtAuthentication jwt_authentication = 13;
+    repeated DnsRecord dns_records = 7;
+    repeated AcmeProtocolCertificate acme_protocol_certificates = 8;
+
+    repeated envoy.config.route.v3.RouteConfiguration evount_routes = 9;
+    repeated envoy.config.cluster.v3.Cluster envoy_clusters = 10;
+    repeated envoy.config.listener.v3.Listener envoy_listeners = 11;
+    repeated envoy.config.endpoint.v3.ClusterLoadAssignment envoy_endpoints = 12;
 }

@@ -15,13 +15,14 @@ import (
 	parameter "github.com/upper-institute/ops-control/internal/parameter"
 	sdinternal "github.com/upper-institute/ops-control/internal/service-discovery"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
-type cloudMapServiceTag_ParameterPathProvider struct {
+type cloudMapServiceTag_parameterUri struct {
 	v string
 }
 
-func (c *cloudMapServiceTag_ParameterPathProvider) FromTags(tagName string, tags []sdtypes.Tag) {
+func (c *cloudMapServiceTag_parameterUri) FromTags(tagName string, tags []sdtypes.Tag) {
 	for _, tag := range tags {
 		if aws.ToString(tag.Key) == tagName {
 			c.v = aws.ToString(tag.Value)
@@ -30,38 +31,37 @@ func (c *cloudMapServiceTag_ParameterPathProvider) FromTags(tagName string, tags
 	}
 }
 
-func (c *cloudMapServiceTag_ParameterPathProvider) GetParameterPath() string {
+func (c *cloudMapServiceTag_parameterUri) GetParameterPath() string {
 	return c.v
 }
 
 type CloudMapServiceDiscovery struct {
-	namespacesNames  []string
-	parameterPathTag string
-	xdsClusterName   string
+	namespacesNames []string
+	parameterUriTag string
+	xdsClusterName  string
 
 	cloudMapClient *servicediscovery.Client
 
 	logger *zap.SugaredLogger
 
-	parameterStore          parameter.ParameterStore
-	parameterFileDownloader parameter.ParameterFileDownloader
-	domainRegistry          domainregistry.DomainRegistryService
+	parameterCache *parameter.CacheOptions
+	domainRegistry domainregistry.DomainRegistryService
 }
 
 func NewCloudMapServiceDiscovery(
 	namespacesNames []string,
-	parameterPathTag string,
+	parameterUriTag string,
 	xdsClusterName string,
 	cloudMapClient *servicediscovery.Client,
 	logger *zap.SugaredLogger,
 ) sdinternal.ServiceDiscoveryService {
 
 	return &CloudMapServiceDiscovery{
-		namespacesNames:  namespacesNames,
-		parameterPathTag: parameterPathTag,
-		xdsClusterName:   xdsClusterName,
-		cloudMapClient:   cloudMapClient,
-		logger:           logger.With("xds_cluster", xdsClusterName, "namespaces_names", namespacesNames),
+		namespacesNames: namespacesNames,
+		parameterUriTag: parameterUriTag,
+		xdsClusterName:  xdsClusterName,
+		cloudMapClient:  cloudMapClient,
+		logger:          logger.With("xds_cluster", xdsClusterName, "namespaces_names", namespacesNames),
 	}
 
 }
@@ -118,20 +118,13 @@ func (c *CloudMapServiceDiscovery) getListServicesInputFilters(ctx context.Conte
 
 }
 
-func (c *CloudMapServiceDiscovery) setupIngress(ctx context.Context, sdState *sdinternal.ServiceDiscoveryState, paramSet *parameter.ParameterSet) error {
+func (c *CloudMapServiceDiscovery) setupIngress(ctx context.Context, sdState *sdinternal.ServiceDiscoveryState, ingress *service_discovery.Ingress) error {
 
-	ingressConfig := &service_discovery.Ingress{}
-
-	err := paramSet.ParseProtoJson(ctx, parameterapi.WellKnown_WELL_KNOWN_INGRESS.String(), ingressConfig)
-	if err != nil {
-		return err
-	}
-
-	ingressConfig.XdsClusterName = c.xdsClusterName
+	ingress.XdsClusterName = c.xdsClusterName
 
 	switch {
 
-	case len(ingressConfig.Domains) == 0:
+	case len(ingress.Domains) == 0:
 		c.logger.Warnw("")
 
 	case c.domainRegistry == nil:
@@ -139,7 +132,7 @@ func (c *CloudMapServiceDiscovery) setupIngress(ctx context.Context, sdState *sd
 
 	default:
 
-		for i, domain := range ingressConfig.Domains {
+		for i, domain := range ingress.Domains {
 
 			c.logger.Debugw("")
 
@@ -154,27 +147,20 @@ func (c *CloudMapServiceDiscovery) setupIngress(ctx context.Context, sdState *sd
 		}
 	}
 
-	sdState.AddIngress(ingressConfig)
+	sdState.AddIngress(ingress)
 
 	return nil
 
 }
 
-func (c *CloudMapServiceDiscovery) setupServiceCluster(ctx context.Context, sdState *sdinternal.ServiceDiscoveryState, paramSet *parameter.ParameterSet, service sdtypes.ServiceSummary) error {
+func (c *CloudMapServiceDiscovery) setupServiceCluster(ctx context.Context, sdState *sdinternal.ServiceDiscoveryState, serviceCluster *service_discovery.ServiceCluster, service sdtypes.ServiceSummary) error {
 
 	serviceName := aws.ToString(service.Name)
 
-	addServiceCluster := &service_discovery.ServiceCluster{}
+	serviceCluster.ServiceClusterName = serviceName
+	serviceCluster.XdsClusterName = c.xdsClusterName
 
-	err := paramSet.ParseProtoJson(ctx, parameterapi.WellKnown_WELL_KNOWN_SERVICE_CLUSTER.String(), addServiceCluster)
-	if err != nil {
-		return err
-	}
-
-	addServiceCluster.ServiceClusterName = serviceName
-	addServiceCluster.XdsClusterName = c.xdsClusterName
-
-	sdState.AddServiceCluster(addServiceCluster)
+	sdState.AddServiceCluster(serviceCluster)
 
 	listInstancesReq := servicediscovery.NewListInstancesPaginator(
 		c.cloudMapClient,
@@ -203,14 +189,14 @@ func (c *CloudMapServiceDiscovery) setupServiceCluster(ctx context.Context, sdSt
 				continue
 			}
 
-			c.logger.Infow("Add endpoint from AWS Cloud Map service instance", "service_name", serviceName, "instance_ipv4", address, "upstream_port", addServiceCluster.UpstreamPort)
+			c.logger.Infow("Add endpoint from AWS Cloud Map service instance", "service_name", serviceName, "instance_ipv4", address, "upstream_port", serviceCluster.UpstreamPort)
 
 			addServiceEndpointsInput.Endpoints = append(
 				addServiceEndpointsInput.Endpoints,
 				&service_discovery.Endpoint{
 					Protocol:  corev3.SocketAddress_TCP,
 					Address:   address,
-					PortValue: addServiceCluster.UpstreamPort,
+					PortValue: serviceCluster.UpstreamPort,
 				},
 			)
 
@@ -226,8 +212,6 @@ func (c *CloudMapServiceDiscovery) setupServiceCluster(ctx context.Context, sdSt
 
 func (c *CloudMapServiceDiscovery) discoverService(ctx context.Context, sdState *sdinternal.ServiceDiscoveryState, service sdtypes.ServiceSummary) error {
 
-	paramSet := parameter.NewParameterSet(c.parameterFileDownloader, c.logger)
-
 	serviceName := aws.ToString(service.Name)
 
 	c.logger.Debugw("Starting service discovery process (AWS Cloud Map)", "service_name", serviceName)
@@ -237,33 +221,73 @@ func (c *CloudMapServiceDiscovery) discoverService(ctx context.Context, sdState 
 		return err
 	}
 
-	paramPathProvider := &cloudMapServiceTag_ParameterPathProvider{}
-	paramPathProvider.FromTags(c.parameterPathTag, listServiceTagsRes.Tags)
+	uriStr := ""
 
-	c.logger.Debugw("Load parameter path from service tag", "service_name", serviceName, "tag_key", c.parameterPathTag, "parameter_path_value", paramPathProvider.GetParameterPath())
+	for _, tag := range listServiceTagsRes.Tags {
+		if aws.ToString(tag.Key) == c.parameterUriTag {
+			uriStr = aws.ToString(tag.Value)
+			break
+		}
+	}
 
-	if len(paramPathProvider.GetParameterPath()) == 0 {
+	c.logger.Debugw("Load parameter path from service tag", "service_name", serviceName, "tag_key", c.parameterUriTag, "parameter_path_value", uriStr)
+
+	if len(uriStr) == 0 {
 		c.logger.Infow("Ignoring service discovery 'case parameter_path is empty", "service_name", serviceName)
 		return nil
 	}
 
-	err = c.parameterStore.Load(ctx, paramPathProvider, paramSet)
+	paramCache, err := c.parameterCache.NewFromURLString(uriStr)
 	if err != nil {
 		return err
 	}
 
-	wnIngress := parameterapi.WellKnown_WELL_KNOWN_INGRESS.String()
-	wnServiceCluster := parameterapi.WellKnown_WELL_KNOWN_SERVICE_CLUSTER.String()
+	err = paramCache.Restore(ctx)
+	if err != nil {
+		return err
+	}
 
 	switch {
 
-	case paramSet.HasFile(wnIngress):
-		c.logger.Infow("Ingress configuration file found", "service_name", serviceName)
-		return c.setupIngress(ctx, sdState, paramSet)
+	case paramCache.HasWellKnown(parameterapi.WellKnown_WELL_KNOWN_INGRESS):
 
-	case paramSet.HasFile(wnServiceCluster):
+		c.logger.Infow("Ingress configuration file found", "service_name", serviceName)
+
+		param := paramCache.GetWellKnown(parameterapi.WellKnown_WELL_KNOWN_INGRESS)
+
+		err = param.Load(ctx)
+		if err != nil {
+			return err
+		}
+
+		ingress := &service_discovery.Ingress{}
+
+		err = protojson.Unmarshal(param.GetFile().Bytes(), ingress)
+		if err != nil {
+			return err
+		}
+
+		return c.setupIngress(ctx, sdState, ingress)
+
+	case paramCache.HasWellKnown(parameterapi.WellKnown_WELL_KNOWN_SERVICE_CLUSTER):
+
 		c.logger.Infow("Service cluster configuration file found", "service_name", serviceName)
-		return c.setupServiceCluster(ctx, sdState, paramSet, service)
+
+		param := paramCache.GetWellKnown(parameterapi.WellKnown_WELL_KNOWN_SERVICE_CLUSTER)
+
+		err = param.Load(ctx)
+		if err != nil {
+			return err
+		}
+
+		serviceCluster := &service_discovery.ServiceCluster{}
+
+		err = protojson.Unmarshal(param.GetFile().Bytes(), serviceCluster)
+		if err != nil {
+			return err
+		}
+
+		return c.setupServiceCluster(ctx, sdState, serviceCluster, service)
 
 	}
 
@@ -273,12 +297,8 @@ func (c *CloudMapServiceDiscovery) discoverService(ctx context.Context, sdState 
 
 }
 
-func (c *CloudMapServiceDiscovery) SetParameterStore(parameterStore parameter.ParameterStore) {
-	c.parameterStore = parameterStore
-}
-
-func (c *CloudMapServiceDiscovery) SetParameterFileDownloader(parameterFileDownloader parameter.ParameterFileDownloader) {
-	c.parameterFileDownloader = parameterFileDownloader
+func (c *CloudMapServiceDiscovery) SetParameterCacheOptions(options *parameter.CacheOptions) {
+	c.parameterCache = options
 }
 
 func (c *CloudMapServiceDiscovery) SetDomainRegistry(domainRegistry domainregistry.DomainRegistryService) {
@@ -287,8 +307,8 @@ func (c *CloudMapServiceDiscovery) SetDomainRegistry(domainRegistry domainregist
 
 func (c *CloudMapServiceDiscovery) checkDependencies() error {
 
-	if c.parameterFileDownloader == nil || c.parameterStore == nil {
-		return fmt.Errorf("AWS Cloud Map service discovery requires a parameter store and a parameter file downloader")
+	if c.parameterCache == nil {
+		return fmt.Errorf("AWS Cloud Map service discovery requires a parameter cache")
 	}
 
 	return nil

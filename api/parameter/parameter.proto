@@ -3,14 +3,15 @@ syntax = "proto3";
 package opscontrol.api.parameter;
 
 enum ParameterType {
-    PARAMETER_TYPE_ENV_VAR = 0;
-    PARAMETER_TYPE_FILE = 1;
-    PARAMETER_TYPE_TEMPLATE_FILE = 2;
+    PARAMETER_TYPE_UNKNOWN = 0;
+    PARAMETER_TYPE_VAR = 1;
+    PARAMETER_TYPE_FILE = 2;
 }
 
 enum WellKnown {
-    WELL_KNOWN_NOOP = 0;
-    WELL_KNOWN_SERVICE_CLUSTER = 1;
-    WELL_KNOWN_INGRESS = 2;
+    WN_NOOP = 0;
+    WN_SERVICE_MESH_SERVICE = 1;
+    WN_TLS_ACCOUNT = 2;
+    WN_TLS_CERTIFICATE = 3;
 }
 

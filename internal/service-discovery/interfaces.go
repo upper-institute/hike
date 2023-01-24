@@ -9,8 +9,8 @@ import (
 )
 
 type ServiceDiscoveryService interface {
-	SetParameterStore(parameterStore parameter.ParameterStore)
-	SetParameterFileDownloader(parameterFileDownloader parameter.ParameterFileDownloader)
+	SetParameterCacheOptions(options *parameter.CacheOptions)
+	SetTLSOptions(options *domainregistry.TLSOptions)
 	SetDomainRegistry(domainRegistry domainregistry.DomainRegistryService)
 	Discover(ctx context.Context) (map[string][]types.Resource, error)
 }
