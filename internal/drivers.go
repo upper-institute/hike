@@ -15,7 +15,9 @@ import (
 var (
 	AWSDriver = &drivers.AWSDriver{}
 
-	ParameterSourceOptions = &parameter.SourceOptions{}
+	ParameterSourceOptions = &parameter.SourceOptions{
+		ParameterOptions: &parameter.ParameterOptions{},
+	}
 
 	Drivers = []Driver{
 		AWSDriver,
