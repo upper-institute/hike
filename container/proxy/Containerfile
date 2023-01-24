@@ -32,3 +32,4 @@ USER envoy
 ENTRYPOINT ["/etc/envoy/docker-entrypoint.sh"]
 
 CMD ["envoy", "-l", "info",  "-c", "/etc/envoy/envoy.yaml"]
+
