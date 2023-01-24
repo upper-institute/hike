@@ -6,6 +6,8 @@ WORKDIR /build
 
 RUN CGO_ENABLED=0 go build -o hike ./cmd/main.go
 
+RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
+
 FROM docker.io/envoyproxy/envoy:v1.24-latest
 
 LABEL "organization.name"="upper-institute"
@@ -13,6 +15,7 @@ LABEL "organization.repository"="hike"
 LABEL "repository.application"="proxy"
 
 COPY --from=builder /build/hike /usr/local/bin/
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 WORKDIR /etc/envoy/
 COPY container/proxy/envoy.yaml ./
