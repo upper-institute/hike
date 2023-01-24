@@ -2,8 +2,6 @@ package drivers
 
 import (
 	"context"
-	"crypto/tls"
-	"net/http"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -59,13 +57,13 @@ func (d *AWSDriver) Load(ctx context.Context, logger *zap.SugaredLogger) error {
 		return err
 	}
 
-	config.HTTPClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
+	// config.HTTPClient = &http.Client{
+	// 	Transport: &http.Transport{
+	// 		TLSClientConfig: &tls.Config{
+	// 			InsecureSkipVerify: true,
+	// 		},
+	// 	},
+	// }
 
 	d.config = config
 

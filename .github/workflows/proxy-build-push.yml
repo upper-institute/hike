@@ -52,7 +52,7 @@ jobs:
         oci: 'true'
         context: ./
         containerfiles: |
-          ./container/hike/Containerfile
+          ./container/proxy/Containerfile
         # build-args: |
         #   some_arg=some_value
 
