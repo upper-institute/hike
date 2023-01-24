@@ -134,17 +134,17 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/."+rootCmdUse+".yaml)")
 
-	rootCmd.PersistentFlags().String("listenAddr", "0.0.0.0:7070", "Bind address to store gRPC server")
+	rootCmd.PersistentFlags().String("listen-addr", "0.0.0.0:7070", "Bind address to store gRPC server")
 	rootCmd.PersistentFlags().Bool("tls", false, "Enable TLS protocol only on gRPC server")
-	rootCmd.PersistentFlags().String("tlsKey", "", "PEM encoded private key file path")
-	rootCmd.PersistentFlags().String("tlsCert", "", "PEM encoded certificate file path")
-	rootCmd.PersistentFlags().Int("grpcMaxConcurrentStreams", 1000000, "Max concurrent streams for gRPC server")
+	rootCmd.PersistentFlags().String("tls-key", "", "PEM encoded private key file path")
+	rootCmd.PersistentFlags().String("tls-cert", "", "PEM encoded certificate file path")
+	rootCmd.PersistentFlags().Int("grpc-max-concurrent-streams", 1000000, "Max concurrent streams for gRPC server")
 
-	viper.BindPFlag("grpcServer.listenAddr", rootCmd.PersistentFlags().Lookup("listenAddr"))
+	viper.BindPFlag("grpcServer.listenAddr", rootCmd.PersistentFlags().Lookup("listen-addr"))
 	viper.BindPFlag("grpcServer.tls.enable", rootCmd.PersistentFlags().Lookup("tls"))
-	viper.BindPFlag("grpcServer.tls.tlsKey", rootCmd.PersistentFlags().Lookup("tlsKey"))
-	viper.BindPFlag("grpcServer.tls.tlsCert", rootCmd.PersistentFlags().Lookup("tlsCert"))
-	viper.BindPFlag("grpcServer.grpc.maxConcurrentStreams", rootCmd.PersistentFlags().Lookup("grpcMaxConcurrentStreams"))
+	viper.BindPFlag("grpcServer.tls.tlsKey", rootCmd.PersistentFlags().Lookup("tls-key"))
+	viper.BindPFlag("grpcServer.tls.tlsCert", rootCmd.PersistentFlags().Lookup("tls-cert"))
+	viper.BindPFlag("grpcServer.grpc.maxConcurrentStreams", rootCmd.PersistentFlags().Lookup("grpc-max-concurrent-streams"))
 
 	internal.AttachLoggingOptions(rootCmd.PersistentFlags(), viper.GetViper())
 	internal.AttachDriversOptions(rootCmd.PersistentFlags(), viper.GetViper())

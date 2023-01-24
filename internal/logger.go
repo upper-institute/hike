@@ -15,9 +15,9 @@ var (
 
 func AttachLoggingOptions(flagSet *pflag.FlagSet, viperInstance *viper.Viper) {
 
-	flagSet.String("logLevel", "debug", "Logging level of stdout (debug, info or error)")
+	flagSet.String("log-level", "debug", "Logging level of stdout (debug, info or error)")
 
-	viperInstance.BindPFlag("log.level", flagSet.Lookup("logLevel"))
+	viperInstance.BindPFlag("log.level", flagSet.Lookup("log-level"))
 
 	Configuration = zap.NewProductionConfig()
 

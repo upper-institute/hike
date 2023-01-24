@@ -22,11 +22,11 @@ var (
 
 func init() {
 
-	envoyCmd.PersistentFlags().Duration("discoveryMinInterval", 30*time.Second, "Discovery minimum interval to reload")
-	viper.BindPFlag("envoy.discoveryMinInterval", envoyCmd.PersistentFlags().Lookup("discoveryMinInterval"))
+	envoyCmd.PersistentFlags().Duration("discovery-min-interval", 30*time.Second, "Discovery minimum interval to reload")
+	viper.BindPFlag("envoy.discoveryMinInterval", envoyCmd.PersistentFlags().Lookup("discovery-min-interval"))
 
-	xdsServerCmd.PersistentFlags().String("nodeId", "hike-node", "Tell envoy which node id to use")
-	viper.BindPFlag("envoy.nodeId", xdsServerCmd.PersistentFlags().Lookup("nodeId"))
+	xdsServerCmd.PersistentFlags().String("node-id", "hike-node", "Tell envoy which node id to use")
+	viper.BindPFlag("envoy.nodeId", xdsServerCmd.PersistentFlags().Lookup("node-id"))
 
 	envoyCmd.AddCommand(xdsServerCmd)
 

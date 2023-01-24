@@ -21,17 +21,17 @@ var (
 
 func init() {
 
-	parameterCmd.PersistentFlags().String("parameterUri", "", "Path to manipulate parameter")
+	parameterCmd.PersistentFlags().String("parameter-uri", "", "Path to manipulate parameter")
 
-	viper.BindPFlag("parameter.uri", parameterCmd.PersistentFlags().Lookup("parameterUri"))
+	viper.BindPFlag("parameter.uri", parameterCmd.PersistentFlags().Lookup("parameter-uri"))
 
-	pullCmd.PersistentFlags().Bool("loadProcessEnvs", true, "Load envs from process")
+	pullCmd.PersistentFlags().Bool("load-process-envs", true, "Load envs from process")
 
-	viper.BindPFlag("parameter.load.processEnvs", pullCmd.PersistentFlags().Lookup("loadProcessEnvs"))
+	viper.BindPFlag("parameter.load.processEnvs", pullCmd.PersistentFlags().Lookup("load-process-envs"))
 
-	pullCmd.PersistentFlags().StringArray("saveFileFromKey", []string{}, "Save files only in the specified key")
+	pullCmd.PersistentFlags().StringArray("save-file-from-key", []string{}, "Save files only in the specified key")
 
-	viper.BindPFlag("parameter.saveFileFromKey", pullCmd.PersistentFlags().Lookup("saveFileFromKey"))
+	viper.BindPFlag("parameter.saveFileFromKey", pullCmd.PersistentFlags().Lookup("save-file-from-key"))
 
 	parameterCmd.AddCommand(pullCmd)
 

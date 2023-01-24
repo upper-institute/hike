@@ -13,11 +13,11 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/hike
+  IMAGE_NAME: ${{ github.repository }}/proxy
 
 jobs:
   build-and-push-image:
-    name: Build & push front proxy container image
+    name: Build & push proxy container image
     runs-on: ubuntu-22.04
 
     permissions:

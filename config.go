@@ -279,7 +279,9 @@ func printServiceCfg() {
 func testUrl() {
 
 	u := &url.URL{
-		Path: "/asd/asdasd",
+		Scheme:   "var",
+		Fragment: "xublega",
+		// Path: "/asd/asdasd",
 	}
 
 	// q := u.Query()
