@@ -24,4 +24,3 @@ COPY container/proxy/docker-entrypoint.sh ./
 ENTRYPOINT ["/etc/envoy/docker-entrypoint.sh"]
 
 CMD ["envoy", "-l", "info",  "-c", "/etc/envoy/envoy.yaml"]
-

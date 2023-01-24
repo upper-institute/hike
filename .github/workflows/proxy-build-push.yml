@@ -9,7 +9,7 @@ on:
       - cmd/**
       - gen/**
       - providers/**
-      - container/hike/**
+      - container/proxy/**
 
 env:
   REGISTRY: ghcr.io
