@@ -4,14 +4,14 @@ package opscontrol.api.servicediscovery;
 
 import "envoy/config/core/v3/address.proto";
 import "envoy/config/cluster/v3/cluster.proto";
-import "envoy/config/listener/v3/listener.proto";
+import "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto";
 import "envoy/config/endpoint/v3/endpoint.proto";
 import "envoy/config/route/v3/route.proto";
 
-import "envoy/extensions/filters/http/cors/v3/cors.proto";
-import "envoy/extensions/filters/http/jwt_authn/v3/config.proto";
-import "envoy/extensions/filters/http/health_check/v3/health_check.proto";
-import "envoy/extensions/filters/http/grpc_web/v3/grpc_web.proto";
+// import "envoy/extensions/filters/http/cors/v3/cors.proto";
+// import "envoy/extensions/filters/http/jwt_authn/v3/config.proto";
+// import "envoy/extensions/filters/http/health_check/v3/health_check.proto";
+// import "envoy/extensions/filters/http/grpc_web/v3/grpc_web.proto";
 
 import "google/protobuf/duration.proto";
 
@@ -30,7 +30,7 @@ message AcmeProtocolCertificate {
     // Default: RSA4096
     string key_type = 5;
     string parameter_file_source = 6;
-    // Optional, default is ops-control/latest
+    // Optional, default is hike/latest
     string user_agent = 7;
     repeated string domains = 8;
 }
@@ -43,21 +43,22 @@ message DnsRecord {
 }
 
 message Service {
-    string group_name = 14;
-    string service_id = 15;
-    string xds_cluster_name = 1;
-    uint32 listen_port = 2;
-    string listen_address = 3;
+    string service_name = 1;
+    string service_id = 2;
+    string xds_cluster_name = 3;
+    uint32 listen_port = 4;
 
-    envoy.extensions.filters.http.cors.v3.CorsPolicy cors_policy = 4; 
-    envoy.extensions.filters.http.health_check.v3.HealthCheck health_check = 5;
-    envoy.extensions.filters.http.grpc_web.v3.GrpcWeb grpc_web = 6;
-    envoy.extensions.filters.http.jwt_authn.v3.JwtAuthentication jwt_authentication = 13;
-    repeated DnsRecord dns_records = 7;
-    repeated AcmeProtocolCertificate acme_protocol_certificates = 8;
+    // envoy.extensions.filters.http.cors.v3.CorsPolicy cors_policy = 4; 
+    // envoy.extensions.filters.http.health_check.v3.HealthCheck health_check = 5;
+    // envoy.extensions.filters.http.grpc_web.v3.GrpcWeb grpc_web = 6;
+    // envoy.extensions.filters.http.jwt_authn.v3.JwtAuthentication jwt_authentication = 13;
+    
+    repeated DnsRecord dns_records = 6;
+    repeated AcmeProtocolCertificate acme_protocol_certificates = 7;
 
-    repeated envoy.config.route.v3.RouteConfiguration evount_routes = 9;
-    repeated envoy.config.cluster.v3.Cluster envoy_clusters = 10;
-    repeated envoy.config.listener.v3.Listener envoy_listeners = 11;
-    repeated envoy.config.endpoint.v3.ClusterLoadAssignment envoy_endpoints = 12;
+    envoy.config.cluster.v3.Cluster envoy_cluster = 9;
+    envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager envoy_http_connection_manager = 10;
+
+    repeated envoy.config.route.v3.RouteConfiguration envoy_routes = 8;
+    repeated envoy.config.endpoint.v3.ClusterLoadAssignment envoy_endpoints = 11;
 }

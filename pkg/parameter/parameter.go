@@ -5,15 +5,13 @@ import (
 	"context"
 	"net/url"
 
-	"github.com/upper-institute/ops-control/gen/api/parameter"
+	paramapi "github.com/upper-institute/hike/proto/api/parameter"
 	"go.uber.org/zap"
 )
 
 const (
 	VarScheme  = "var"
 	FileScheme = "file"
-
-	ValueQuery = "value"
 )
 
 type ParameterOptions struct {
@@ -84,25 +82,25 @@ func (p *Parameter) SetQuery(values url.Values) {
 	p.uri.RawQuery = values.Encode()
 }
 
-func (p *Parameter) GetType() parameter.ParameterType {
+func (p *Parameter) GetType() paramapi.ParameterType {
 
 	switch p.uri.Scheme {
 
 	case VarScheme:
-		return parameter.ParameterType_PARAMETER_TYPE_VAR
+		return paramapi.ParameterType_PT_VAR
 
 	case FileScheme:
-		return parameter.ParameterType_PARAMETER_TYPE_FILE
+		return paramapi.ParameterType_PT_FILE
 
 	}
 
-	return parameter.ParameterType_PARAMETER_TYPE_UNKNOWN
+	return paramapi.ParameterType_PT_UNKNOWN
 
 }
 
 func (p *Parameter) Load(ctx context.Context) error {
 
-	if p.GetType() != parameter.ParameterType_PARAMETER_TYPE_FILE {
+	if p.GetType() != paramapi.ParameterType_PT_FILE {
 		return LoadOnlyFileTypeErr
 	}
 
@@ -116,7 +114,7 @@ func (p *Parameter) Load(ctx context.Context) error {
 
 func (p *Parameter) Push(ctx context.Context) error {
 
-	if p.GetType() == parameter.ParameterType_PARAMETER_TYPE_UNKNOWN {
+	if p.GetType() == paramapi.ParameterType_PT_UNKNOWN {
 		return UnknownSchemeErr
 	}
 
@@ -125,7 +123,7 @@ func (p *Parameter) Push(ctx context.Context) error {
 		return err
 	}
 
-	if p.GetType() == parameter.ParameterType_PARAMETER_TYPE_FILE {
+	if p.GetType() == paramapi.ParameterType_PT_FILE {
 		err = p.options.Uploader.Upload(ctx, p)
 	}
 

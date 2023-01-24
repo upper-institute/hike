@@ -11,10 +11,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	awsdriver "github.com/upper-institute/ops-control/pkg/drivers/aws"
-	"github.com/upper-institute/ops-control/pkg/helpers"
-	"github.com/upper-institute/ops-control/pkg/parameter"
-	"github.com/upper-institute/ops-control/pkg/servicemesh"
+	awsdriver "github.com/upper-institute/hike/pkg/drivers/aws"
+	"github.com/upper-institute/hike/pkg/helpers"
+	"github.com/upper-institute/hike/pkg/parameter"
+	"github.com/upper-institute/hike/pkg/servicemesh"
 	"go.uber.org/zap"
 )
 
@@ -28,14 +28,14 @@ const (
 )
 
 type AWSDriver struct {
-	Logger *zap.SugaredLogger
+	logger *zap.SugaredLogger
 
 	config aws.Config
 
 	binder *helpers.FlagBinder
 }
 
-func (d *AWSDriver) Bind(cfg *viper.Viper, flagSet *pflag.FlagSet) {
+func (d *AWSDriver) Bind(flagSet *pflag.FlagSet, cfg *viper.Viper) {
 
 	d.binder = &helpers.FlagBinder{cfg, flagSet}
 
@@ -48,7 +48,9 @@ func (d *AWSDriver) Bind(cfg *viper.Viper, flagSet *pflag.FlagSet) {
 
 }
 
-func (d *AWSDriver) Load(ctx context.Context) error {
+func (d *AWSDriver) Load(ctx context.Context, logger *zap.SugaredLogger) error {
+
+	d.logger = logger
 
 	config, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
@@ -61,39 +63,61 @@ func (d *AWSDriver) Load(ctx context.Context) error {
 
 }
 
-func (d *AWSDriver) NewSSMParameterStore() parameter.Store {
+func (d *AWSDriver) ApplyParameterSourceOptions(opts *parameter.SourceOptions) {
 
-	ssmClient := ssm.NewFromConfig(d.config)
+	if d.binder.Viper.GetBool(DriversAwsSsmParameterStoreEnable) {
 
-	return awsdriver.NewSSMParameterStore(ssmClient, d.Logger)
+		ssmClient := ssm.NewFromConfig(d.config)
 
-}
+		store := awsdriver.NewSSMParameterStore(ssmClient, d.logger)
 
-func (d *AWSDriver) NewS3ParameterStorage() parameter.Storage {
+		opts.Store = store
+		opts.ParameterOptions.Writer = store
 
-	s3Client := s3.NewFromConfig(d.config)
+	}
 
-	return awsdriver.NewS3ParameterStorage(s3Client, d.Logger)
+	if d.binder.Viper.GetBool(DriversAwsS3ParameterStorageEnable) {
 
-}
+		s3Client := s3.NewFromConfig(d.config)
 
-func (d *AWSDriver) NewCloudMapServiceDiscovery() servicemesh.EnvoyDiscoveryService {
+		storage := awsdriver.NewS3ParameterStorage(s3Client, d.logger)
 
-	cloudMapClient := servicediscovery.NewFromConfig(d.config)
+		opts.ParameterOptions.Downloader = storage
+		opts.ParameterOptions.Uploader = storage
 
-	return awsdriver.NewCloudMapServiceDiscovery(
-		d.binder.Viper.GetStringSlice(DriversAwsCloudMapNamespacesNames),
-		d.binder.Viper.GetString(DriversAwsCloudMapParameterUriTag),
-		cloudMapClient,
-		d.Logger,
-	)
+	}
 
 }
 
-func (d *AWSDriver) NewRoute53DomainRegistry() servicemesh.EnvoyDiscoveryService {
+func (d *AWSDriver) GetEnvoyDiscoveryServices(cacheOptions *parameter.SourceOptions) []servicemesh.EnvoyDiscoveryService {
 
-	route53Client := route53.NewFromConfig(d.config)
+	services := []servicemesh.EnvoyDiscoveryService{}
 
-	return awsdriver.NewRoute53DomainRegistry(route53Client, d.Logger)
+	if d.binder.Viper.GetBool(DriversAwsCloudMapServiceDiscoveryEnable) {
+
+		cloudMapClient := servicediscovery.NewFromConfig(d.config)
+
+		services = append(
+			services,
+			awsdriver.NewCloudMapServiceDiscovery(
+				d.binder.Viper.GetStringSlice(DriversAwsCloudMapNamespacesNames),
+				d.binder.Viper.GetString(DriversAwsCloudMapParameterUriTag),
+				cacheOptions,
+				cloudMapClient,
+				d.logger,
+			),
+		)
+
+	}
+
+	if d.binder.Viper.GetBool(DriversAwsRoute53DomainRegistryEnable) {
+
+		route53Client := route53.NewFromConfig(d.config)
+
+		services = append(services, awsdriver.NewRoute53DomainRegistry(route53Client, d.logger))
+
+	}
+
+	return services
 
 }

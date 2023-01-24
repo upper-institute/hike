@@ -3,9 +3,9 @@ syntax = "proto3";
 package opscontrol.api.parameter;
 
 enum ParameterType {
-    PARAMETER_TYPE_UNKNOWN = 0;
-    PARAMETER_TYPE_VAR = 1;
-    PARAMETER_TYPE_FILE = 2;
+    PT_UNKNOWN = 0;
+    PT_VAR = 1;
+    PT_FILE = 2;
 }
 
 enum WellKnown {

@@ -1,4 +1,4 @@
-name: "[Front Proxy] Build & Push"
+name: "[Proxy] Build & Push"
 
 on:
   push:
@@ -9,11 +9,11 @@ on:
       - cmd/**
       - gen/**
       - providers/**
-      - container/front-proxy/**
+      - container/hike/**
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/front-proxy
+  IMAGE_NAME: ${{ github.repository }}/hike
 
 jobs:
   build-and-push-image:
@@ -52,7 +52,7 @@ jobs:
         oci: 'true'
         context: ./
         containerfiles: |
-          ./container/front-proxy/Containerfile
+          ./container/hike/Containerfile
         # build-args: |
         #   some_arg=some_value
 

@@ -18,32 +18,23 @@ import (
 	secretservice "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	serverv3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
-	service_discovery "github.com/upper-institute/ops-control/gen/api/service-discovery"
+	sdapi "github.com/upper-institute/hike/proto/api/service-discovery"
 )
 
 type EnvoyDiscoveryOptions struct {
 	NodeID                 string
-	GRPCServer             *grpc.Server
 	Services               []EnvoyDiscoveryService
 	WatchInterval          time.Duration
 	ServiceDiscoverTimeout time.Duration
 }
 
-func (options *EnvoyDiscoveryOptions) NewServer(ctx context.Context, logger *zap.SugaredLogger) (*envoyDiscoveryServer, error) {
+func (options *EnvoyDiscoveryOptions) NewServer(ctx context.Context, logger *zap.SugaredLogger) (*EnvoyDiscoveryServer, error) {
 
 	cache := cache.NewSnapshotCache(false, cache.IDHash{}, nil)
 
 	server := serverv3.NewServer(ctx, cache, nil)
 
-	discoverygrpc.RegisterAggregatedDiscoveryServiceServer(options.GRPCServer, server)
-	endpointservice.RegisterEndpointDiscoveryServiceServer(options.GRPCServer, server)
-	clusterservice.RegisterClusterDiscoveryServiceServer(options.GRPCServer, server)
-	routeservice.RegisterRouteDiscoveryServiceServer(options.GRPCServer, server)
-	listenerservice.RegisterListenerDiscoveryServiceServer(options.GRPCServer, server)
-	secretservice.RegisterSecretDiscoveryServiceServer(options.GRPCServer, server)
-	runtimeservice.RegisterRuntimeDiscoveryServiceServer(options.GRPCServer, server)
-
-	return &envoyDiscoveryServer{
+	return &EnvoyDiscoveryServer{
 		options: options,
 		logger:  logger.With("part", "service-mesh/envoy-discovery-service"),
 		server:  server,
@@ -52,7 +43,7 @@ func (options *EnvoyDiscoveryOptions) NewServer(ctx context.Context, logger *zap
 
 }
 
-type envoyDiscoveryServer struct {
+type EnvoyDiscoveryServer struct {
 	options *EnvoyDiscoveryOptions
 
 	logger *zap.SugaredLogger
@@ -63,7 +54,19 @@ type envoyDiscoveryServer struct {
 	version int64
 }
 
-func (e *envoyDiscoveryServer) discover() {
+func (e *EnvoyDiscoveryServer) Register(grpcServer *grpc.Server) {
+
+	discoverygrpc.RegisterAggregatedDiscoveryServiceServer(grpcServer, e.server)
+	endpointservice.RegisterEndpointDiscoveryServiceServer(grpcServer, e.server)
+	clusterservice.RegisterClusterDiscoveryServiceServer(grpcServer, e.server)
+	routeservice.RegisterRouteDiscoveryServiceServer(grpcServer, e.server)
+	listenerservice.RegisterListenerDiscoveryServiceServer(grpcServer, e.server)
+	secretservice.RegisterSecretDiscoveryServiceServer(grpcServer, e.server)
+	runtimeservice.RegisterRuntimeDiscoveryServiceServer(grpcServer, e.server)
+
+}
+
+func (e *EnvoyDiscoveryServer) discover() {
 
 	version := int64(0)
 	hash := []byte{}
@@ -77,7 +80,7 @@ func (e *envoyDiscoveryServer) discover() {
 			ctx, cancel = context.WithTimeout(ctx, e.options.ServiceDiscoverTimeout)
 		}
 
-		applySvcCh := make(chan *service_discovery.Service)
+		applySvcCh := make(chan *sdapi.Service)
 		res := NewResources()
 
 		go func() {
@@ -98,7 +101,7 @@ func (e *envoyDiscoveryServer) discover() {
 
 				defer wg.Done()
 
-				svcCh := make(chan *service_discovery.Service)
+				svcCh := make(chan *sdapi.Service)
 
 				go service.Discover(ctx, svcCh)
 
@@ -143,7 +146,7 @@ func (e *envoyDiscoveryServer) discover() {
 
 }
 
-func (e *envoyDiscoveryServer) StartDiscoveryCycle() error {
+func (e *EnvoyDiscoveryServer) StartDiscoveryCycle() error {
 
 	go e.discover()
 

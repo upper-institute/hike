@@ -1,7 +1,7 @@
 package main
 
 import (
-	cmd "github.com/upper-institute/ops-control/cmd/ops-control"
+	cmd "github.com/upper-institute/hike/cmd/commands"
 )
 
 func main() {

@@ -3,9 +3,9 @@ package servicemesh
 import (
 	"context"
 
-	service_discovery "github.com/upper-institute/ops-control/gen/api/service-discovery"
+	sdapi "github.com/upper-institute/hike/proto/api/service-discovery"
 )
 
 type EnvoyDiscoveryService interface {
-	Discover(ctx context.Context, svcCh chan *service_discovery.Service)
+	Discover(ctx context.Context, svcCh chan *sdapi.Service)
 }

@@ -9,8 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/route53"
 	"github.com/aws/aws-sdk-go-v2/service/route53/types"
-	service_discovery "github.com/upper-institute/ops-control/gen/api/service-discovery"
-	"github.com/upper-institute/ops-control/pkg/servicemesh"
+	"github.com/upper-institute/hike/pkg/servicemesh"
+	sdapi "github.com/upper-institute/hike/proto/api/service-discovery"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -19,7 +19,7 @@ const domainSeparator = "."
 
 type route53DomainRegistry_Registration struct {
 	ctx           context.Context
-	ingressDomain *service_discovery.DnsRecord
+	ingressDomain *sdapi.DnsRecord
 
 	logger *zap.SugaredLogger
 
@@ -153,7 +153,7 @@ func (id *route53DomainRegistry) registerCname(registration *route53DomainRegist
 
 }
 
-func (id *route53DomainRegistry) RegisterDnsRecord(ctx context.Context, ingressDomain *service_discovery.DnsRecord) error {
+func (id *route53DomainRegistry) RegisterDnsRecord(ctx context.Context, ingressDomain *sdapi.DnsRecord) error {
 
 	logger := id.logger.With("zone", ingressDomain.Zone, "record_name", ingressDomain.RecordName)
 
@@ -199,6 +199,6 @@ func (id *route53DomainRegistry) RegisterDnsRecord(ctx context.Context, ingressD
 	return nil
 }
 
-func (r *route53DomainRegistry) Discover(ctx context.Context, svcCh chan *service_discovery.Service) {
+func (r *route53DomainRegistry) Discover(ctx context.Context, svcCh chan *sdapi.Service) {
 
 }

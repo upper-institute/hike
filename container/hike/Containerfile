@@ -1,0 +1,20 @@
+FROM golang:alpine as builder
+
+RUN mkdir /build
+ADD . /build/
+WORKDIR /build
+
+RUN CGO_ENABLED=0 go build -o hike ./cmd/main.go
+
+FROM debian:bookworm
+
+LABEL "organization.name"="upper-institute"
+LABEL "organization.repository"="hike"
+LABEL "repository.application"="hike"
+
+COPY --from=builder /build/hike /usr/local/bin/
+
+WORKDIR /etc/envoy/
+
+CMD ["hike", "-h"]
+

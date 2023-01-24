@@ -1,4 +1,4 @@
-name: "[Ops Control] Build & Push"
+name: "[Hike] Build & Push"
 
 on:
   push:
@@ -9,11 +9,11 @@ on:
       - cmd/**
       - gen/**
       - providers/**
-      - container/ops-control/**
+      - container/hike/**
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/ops-control
+  IMAGE_NAME: ${{ github.repository }}/hike
 
 jobs:
   build-and-push-image:
@@ -52,7 +52,7 @@ jobs:
         oci: 'true'
         context: ./
         containerfiles: |
-          ./container/ops-control/Containerfile
+          ./container/hike/Containerfile
         # build-args: |
         #   some_arg=some_value
 

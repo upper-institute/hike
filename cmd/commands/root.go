@@ -1,30 +1,26 @@
-package controllers
+package commands
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
 	"strings"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	envoyctlr "github.com/upper-institute/ops-control/cmd/ops-control/envoy"
-	"github.com/upper-institute/ops-control/cmd/ops-control/parameter"
-	parameterctlr "github.com/upper-institute/ops-control/cmd/ops-control/parameter"
-
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
-	"github.com/upper-institute/ops-control/internal/logger"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/upper-institute/hike/internal"
 	otelgrpc "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 )
 
-const rootCmdUse = "ops-control"
+const rootCmdUse = "hike"
 
 var (
 	cfgFile string
@@ -33,22 +29,24 @@ var (
 	grpcServer     *grpc.Server
 	serverMux      = http.NewServeMux()
 
-	RootCmd = &cobra.Command{
+	rootCmd = &cobra.Command{
 		Use:   rootCmdUse,
-		Short: "ops-control, functions to control cloud native operations",
+		Short: "hike, functions to control cloud native operations",
 		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+
+			log := internal.SugaredLogger
 
 			opts := []grpc.ServerOption{
 				grpc.StreamInterceptor(
 					grpc_middleware.ChainStreamServer(
 						otelgrpc.StreamServerInterceptor(),
-						grpc_zap.StreamServerInterceptor(logger.Logger),
+						grpc_zap.StreamServerInterceptor(internal.Logger),
 					),
 				),
 				grpc.UnaryInterceptor(
 					grpc_middleware.ChainUnaryServer(
 						otelgrpc.UnaryServerInterceptor(),
-						grpc_zap.UnaryServerInterceptor(logger.Logger),
+						grpc_zap.UnaryServerInterceptor(internal.Logger),
 					),
 				),
 			}
@@ -85,15 +83,39 @@ var (
 
 			isGrpcServer := false
 
-			if envoyctlr.RegisterServices(grpcServer, serverMux) {
+			if discoveryOptions != nil {
+
 				isGrpcServer = true
+
+				discoveryOptions.Services = internal.EnvoyDiscoveryServices
+
+				discoveryServer, err := discoveryOptions.NewServer(context.Background(), internal.SugaredLogger)
+
+				if err != nil {
+					log.Fatalln(err)
+				}
+
+				discoveryServer.StartDiscoveryCycle()
+
+				discoveryServer.Register(grpcServer)
+
 			}
 
 			if isGrpcServer {
-				serveGrpcServer()
+
+				reflection.Register(grpcServer)
+
+				log.Infow("Server listening", "address", serverListener.Addr())
+
+				server := &http.Server{Handler: &grpcMatcher{}}
+
+				if err := server.Serve(serverListener); err != nil {
+					log.Fatalln("Failed to serve because", err)
+				}
+
 			}
 
-			logger.FlushLogger()
+			internal.FlushLogger()
 
 			return nil
 
@@ -102,7 +124,7 @@ var (
 )
 
 func Execute() {
-	if err := RootCmd.Execute(); err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
@@ -110,25 +132,25 @@ func Execute() {
 
 func init() {
 
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/."+rootCmdUse+".yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/."+rootCmdUse+".yaml)")
 
-	RootCmd.PersistentFlags().String("listenAddr", "0.0.0.0:7070", "Bind address to store gRPC server")
-	RootCmd.PersistentFlags().Bool("tls", false, "Enable TLS protocol only on gRPC server")
-	RootCmd.PersistentFlags().String("tlsKey", "", "PEM encoded private key file path")
-	RootCmd.PersistentFlags().String("tlsCert", "", "PEM encoded certificate file path")
-	RootCmd.PersistentFlags().Int("grpcMaxConcurrentStreams", 1000000, "Max concurrent streams for gRPC server")
+	rootCmd.PersistentFlags().String("listenAddr", "0.0.0.0:7070", "Bind address to store gRPC server")
+	rootCmd.PersistentFlags().Bool("tls", false, "Enable TLS protocol only on gRPC server")
+	rootCmd.PersistentFlags().String("tlsKey", "", "PEM encoded private key file path")
+	rootCmd.PersistentFlags().String("tlsCert", "", "PEM encoded certificate file path")
+	rootCmd.PersistentFlags().Int("grpcMaxConcurrentStreams", 1000000, "Max concurrent streams for gRPC server")
 
-	viper.BindPFlag("grpcServer.listenAddr", RootCmd.PersistentFlags().Lookup("listenAddr"))
-	viper.BindPFlag("grpcServer.tls.enable", RootCmd.PersistentFlags().Lookup("tls"))
-	viper.BindPFlag("grpcServer.tls.tlsKey", RootCmd.PersistentFlags().Lookup("tlsKey"))
-	viper.BindPFlag("grpcServer.tls.tlsCert", RootCmd.PersistentFlags().Lookup("tlsCert"))
-	viper.BindPFlag("grpcServer.grpc.maxConcurrentStreams", RootCmd.PersistentFlags().Lookup("grpcMaxConcurrentStreams"))
+	viper.BindPFlag("grpcServer.listenAddr", rootCmd.PersistentFlags().Lookup("listenAddr"))
+	viper.BindPFlag("grpcServer.tls.enable", rootCmd.PersistentFlags().Lookup("tls"))
+	viper.BindPFlag("grpcServer.tls.tlsKey", rootCmd.PersistentFlags().Lookup("tlsKey"))
+	viper.BindPFlag("grpcServer.tls.tlsCert", rootCmd.PersistentFlags().Lookup("tlsCert"))
+	viper.BindPFlag("grpcServer.grpc.maxConcurrentStreams", rootCmd.PersistentFlags().Lookup("grpcMaxConcurrentStreams"))
 
-	RootCmd.AddCommand(envoyctlr.EnvoyCmd)
-	RootCmd.AddCommand(parameterctlr.ParameterCmd)
+	internal.AttachLoggingOptions(rootCmd.PersistentFlags(), viper.GetViper())
+	internal.AttachDriversOptions(rootCmd.PersistentFlags(), viper.GetViper())
 
-	parameter.AttachParameterPullOptions(RootCmd.PersistentFlags())
-	logger.AttachLoggingOptions(RootCmd.PersistentFlags(), viper.GetViper())
+	rootCmd.AddCommand(envoyCmd)
+	rootCmd.AddCommand(parameterCmd)
 
 	cobra.OnInitialize(initConfig)
 
@@ -143,20 +165,6 @@ func (g *grpcMatcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		grpcServer.ServeHTTP(w, r)
 	} else {
 		serverMux.ServeHTTP(w, r)
-	}
-
-}
-
-func serveGrpcServer() {
-
-	reflection.Register(grpcServer)
-
-	log.Println("Server listening at:", serverListener.Addr())
-
-	server := &http.Server{Handler: &grpcMatcher{}}
-
-	if err := server.Serve(serverListener); err != nil {
-		log.Fatalln("Failed to serve because", err)
 	}
 
 }

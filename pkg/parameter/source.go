@@ -6,15 +6,15 @@ import (
 	"os"
 	"strings"
 
-	"github.com/upper-institute/ops-control/gen/api/parameter"
+	paramapi "github.com/upper-institute/hike/proto/api/parameter"
 )
 
-type CacheOptions struct {
+type SourceOptions struct {
 	*ParameterOptions
 	Store Store
 }
 
-func (options *CacheOptions) NewFromURLString(urlStr string) (*Cache, error) {
+func (options *SourceOptions) NewFromURLString(urlStr string) (*Source, error) {
 
 	uri, err := url.Parse(urlStr)
 	if err != nil {
@@ -23,17 +23,17 @@ func (options *CacheOptions) NewFromURLString(urlStr string) (*Cache, error) {
 
 	kv := make(map[string]*Parameter)
 
-	return &Cache{uri, options, kv}, nil
+	return &Source{uri, options, kv}, nil
 
 }
 
-type Cache struct {
+type Source struct {
 	uri     *url.URL
-	options *CacheOptions
+	options *SourceOptions
 	kv      map[string]*Parameter
 }
 
-func (c *Cache) Restore(ctx context.Context) error {
+func (c *Source) Restore(ctx context.Context) error {
 
 	pullReq := &PullRequest{
 		ParameterOptions: c.options.ParameterOptions,
@@ -60,11 +60,11 @@ func (c *Cache) Restore(ctx context.Context) error {
 				endCh = nil
 			}
 
-		case parameter, ok := <-pullReq.Result:
+		case param, ok := <-pullReq.Result:
 			if !ok {
 				return nil
 			}
-			c.kv[parameter.key] = parameter
+			c.kv[param.key] = param
 
 		}
 
@@ -72,24 +72,24 @@ func (c *Cache) Restore(ctx context.Context) error {
 
 }
 
-func (c *Cache) Has(key string) bool {
+func (c *Source) Has(key string) bool {
 	_, ok := c.kv[key]
 	return ok
 }
 
-func (c *Cache) HasWellKnown(wellKnown parameter.WellKnown) bool {
+func (c *Source) HasWellKnown(wellKnown paramapi.WellKnown) bool {
 	return c.Has(wellKnown.String())
 }
 
-func (c *Cache) Get(key string) *Parameter {
+func (c *Source) Get(key string) *Parameter {
 	return c.kv[key]
 }
 
-func (c *Cache) GetWellKnown(key parameter.WellKnown) *Parameter {
+func (c *Source) GetWellKnown(key paramapi.WellKnown) *Parameter {
 	return c.kv[key.String()]
 }
 
-func (c *Cache) List() []*Parameter {
+func (c *Source) List() []*Parameter {
 
 	list := make([]*Parameter, 0)
 
@@ -101,7 +101,7 @@ func (c *Cache) List() []*Parameter {
 
 }
 
-func (c *Cache) RestoreFromProcessEnvs() error {
+func (c *Source) RestoreFromProcessEnvs() error {
 
 	envs := os.Environ()
 
@@ -112,7 +112,7 @@ func (c *Cache) RestoreFromProcessEnvs() error {
 		key := env[:sep]
 		value := env[sep+1:]
 
-		parameter, err := c.options.ParameterOptions.NewFromURI(key, &url.URL{
+		param, err := c.options.ParameterOptions.NewFromURI(key, &url.URL{
 			Fragment: value,
 			Scheme:   VarScheme,
 		})
@@ -120,7 +120,7 @@ func (c *Cache) RestoreFromProcessEnvs() error {
 			return err
 		}
 
-		c.kv[key] = parameter
+		c.kv[key] = param
 
 	}
 

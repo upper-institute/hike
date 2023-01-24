@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	parameter "github.com/upper-institute/ops-control/pkg/parameter"
+	parameter "github.com/upper-institute/hike/pkg/parameter"
 	"go.uber.org/zap"
 )
 

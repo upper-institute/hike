@@ -1,4 +1,4 @@
-# ops-control
+# hike
 
 ## Git Vault
 

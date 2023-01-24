@@ -7,7 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
-	"github.com/upper-institute/ops-control/pkg/parameter"
+	"github.com/upper-institute/hike/pkg/parameter"
 	"go.uber.org/zap"
 )
 
