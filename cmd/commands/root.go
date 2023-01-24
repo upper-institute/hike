@@ -16,7 +16,6 @@ import (
 	"github.com/upper-institute/hike/internal"
 	otelgrpc "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -36,6 +35,8 @@ var (
 
 			log := internal.SugaredLogger
 
+			server := &http.Server{Handler: &grpcMatcher{}}
+
 			opts := []grpc.ServerOption{
 				grpc.StreamInterceptor(
 					grpc_middleware.ChainStreamServer(
@@ -51,28 +52,27 @@ var (
 				),
 			}
 
-			if viper.GetBool("grpcServer.enableTls") {
+			tlsCert := viper.GetString("grpcServer.tls.cert")
+			tlsKey := viper.GetString("grpcServer.tls.key")
 
-				tlsCert := viper.GetString("grpcServer.tls.cert")
-				tlsKey := viper.GetString("grpcServer.tls.key")
-
-				cert, err := tls.LoadX509KeyPair(tlsCert, tlsKey)
-				if err != nil {
-					log.Fatalln("failed load TLS certificate (", tlsCert, ") or key (", tlsKey, ") because", err)
-				}
-
-				config := &tls.Config{
-					Certificates: []tls.Certificate{cert},
-					ClientAuth:   tls.VerifyClientCertIfGiven,
-				}
-
-				opts = append(opts, grpc.Creds(credentials.NewTLS(config)))
-
+			cert, err := tls.LoadX509KeyPair(tlsCert, tlsKey)
+			if err != nil {
+				log.Fatalln("failed load TLS certificate (", tlsCert, ") or key (", tlsKey, ") because", err)
 			}
+
+			log.Infow("TLS configuration enabled")
+
+			config := &tls.Config{
+				Certificates: []tls.Certificate{cert},
+				ClientAuth:   tls.VerifyClientCertIfGiven,
+				NextProtos:   []string{"h2"},
+			}
+
+			server.TLSConfig = config
 
 			listenAddr := viper.GetString("grpcServer.listenAddr")
 
-			lis, err := net.Listen("tcp", listenAddr)
+			lis, err := tls.Listen("tcp", listenAddr, config)
 			if err != nil {
 				log.Fatalln("failed to listen to store address", listenAddr, "because", err)
 			}
@@ -107,8 +107,6 @@ var (
 
 				log.Infow("Server listening", "address", serverListener.Addr())
 
-				server := &http.Server{Handler: &grpcMatcher{}}
-
 				if err := server.Serve(serverListener); err != nil {
 					log.Fatalln("Failed to serve because", err)
 				}
@@ -142,8 +140,8 @@ func init() {
 
 	viper.BindPFlag("grpcServer.listenAddr", rootCmd.PersistentFlags().Lookup("listen-addr"))
 	viper.BindPFlag("grpcServer.tls.enable", rootCmd.PersistentFlags().Lookup("tls"))
-	viper.BindPFlag("grpcServer.tls.tlsKey", rootCmd.PersistentFlags().Lookup("tls-key"))
-	viper.BindPFlag("grpcServer.tls.tlsCert", rootCmd.PersistentFlags().Lookup("tls-cert"))
+	viper.BindPFlag("grpcServer.tls.key", rootCmd.PersistentFlags().Lookup("tls-key"))
+	viper.BindPFlag("grpcServer.tls.cert", rootCmd.PersistentFlags().Lookup("tls-cert"))
 	viper.BindPFlag("grpcServer.grpc.maxConcurrentStreams", rootCmd.PersistentFlags().Lookup("grpc-max-concurrent-streams"))
 
 	internal.AttachLoggingOptions(rootCmd.PersistentFlags(), viper.GetViper())
@@ -161,10 +159,14 @@ type grpcMatcher struct{}
 func (g *grpcMatcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	ct := r.Header.Get("Content-Type")
-	if r.ProtoMajor == 2 && strings.Contains(ct, "application/grpc") {
-		grpcServer.ServeHTTP(w, r)
-	} else {
+
+	internal.SugaredLogger.Debugw("New request", "headers", r.Header, "protocol", r.ProtoMajor, "tls", r.TLS.NegotiatedProtocol)
+
+	if strings.Contains(ct, "application/json") {
 		serverMux.ServeHTTP(w, r)
+	} else {
+		internal.SugaredLogger.Debugw("gRPC Request")
+		grpcServer.ServeHTTP(w, r)
 	}
 
 }

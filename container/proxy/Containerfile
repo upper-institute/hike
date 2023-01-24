@@ -20,6 +20,15 @@ WORKDIR /etc/envoy/
 COPY container/proxy/envoy.yaml ./
 COPY container/proxy/docker-entrypoint.sh ./
 
+USER root
+
+COPY server.key ./
+COPY server.crt ./
+
+RUN chown envoy:envoy server.key server.crt
+
+USER envoy
+
 ENTRYPOINT ["/etc/envoy/docker-entrypoint.sh"]
 
 CMD ["envoy", "-l", "info",  "-c", "/etc/envoy/envoy.yaml"]
