@@ -8,7 +8,7 @@ on:
       - internal/**
       - cmd/**
       - gen/**
-      - providers/**
+      - pkg/**
       - container/proxy/**
 
 env:

@@ -131,6 +131,8 @@ func (e *EnvoyDiscoveryServer) discover() {
 
 		if !bytes.Equal(hash, newHash) {
 
+			version++
+
 			snapshot, err := res.DoSnapshot(version)
 			if err != nil {
 				e.logger.Error(err)
