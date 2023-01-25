@@ -9,6 +9,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	sdapi "github.com/upper-institute/hike/proto/api/service-discovery"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/anypb"
 
@@ -28,9 +29,10 @@ import (
 
 type Resources struct {
 	resourceMap map[string][]types.Resource
+	logger      *zap.SugaredLogger
 }
 
-func NewResources() *Resources {
+func NewResources(logger *zap.SugaredLogger) *Resources {
 	return &Resources{
 		resourceMap: map[string][]types.Resource{
 			resource.EndpointType: {},
@@ -40,10 +42,13 @@ func NewResources() *Resources {
 			resource.ListenerType: {},
 			resource.RuntimeType:  {},
 		},
+		logger: logger,
 	}
 }
 
 func (r *Resources) ApplyService(svc *sdapi.Service) {
+
+	r.logger.Infow("Apply service resources", "service_name", svc.ServiceName)
 
 	cluster := svc.EnvoyCluster
 

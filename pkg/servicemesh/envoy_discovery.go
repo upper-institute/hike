@@ -30,7 +30,7 @@ type EnvoyDiscoveryOptions struct {
 
 func (options *EnvoyDiscoveryOptions) NewServer(ctx context.Context, logger *zap.SugaredLogger) (*EnvoyDiscoveryServer, error) {
 
-	cache := cache.NewSnapshotCache(false, cache.IDHash{}, nil)
+	cache := cache.NewSnapshotCache(true, cache.IDHash{}, nil)
 
 	server := serverv3.NewServer(ctx, cache, nil)
 
@@ -83,7 +83,7 @@ func (e *EnvoyDiscoveryServer) discover() {
 		}
 
 		applySvcCh := make(chan *sdapi.Service)
-		res := NewResources()
+		res := NewResources(e.logger)
 
 		go func() {
 
@@ -131,6 +131,8 @@ func (e *EnvoyDiscoveryServer) discover() {
 
 		if !bytes.Equal(hash, newHash) {
 
+			e.logger.Infow("Need snapshot", "node_id", e.options.NodeID)
+
 			version++
 
 			snapshot, err := res.DoSnapshot(version)
@@ -149,7 +151,7 @@ func (e *EnvoyDiscoveryServer) discover() {
 
 		}
 
-		e.logger.Infow("Sleeping before new discover cycle", "watch_interval", e.options.WatchInterval)
+		e.logger.Infow("Sleeping before new discover cycle", "watch_interval", e.options.WatchInterval, "version", version)
 
 		time.Sleep(e.options.WatchInterval)
 
