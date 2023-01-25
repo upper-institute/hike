@@ -12,6 +12,14 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/anypb"
 
+	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/stream/v3"
+	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
+	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_web/v3"
+	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/health_check/v3"
+	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
+	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
+	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
+
 	clusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	corev3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	listenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
@@ -141,7 +149,7 @@ func (r *Resources) ApplyService(svc *sdapi.Service) {
 	}
 
 	for _, route := range svc.EnvoyRoutes {
-		r.resourceMap[resource.RouteType] = append(r.resourceMap[resource.EndpointType], route)
+		r.resourceMap[resource.RouteType] = append(r.resourceMap[resource.RouteType], route)
 	}
 
 }

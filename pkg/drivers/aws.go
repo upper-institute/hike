@@ -105,24 +105,26 @@ func (d *AWSDriver) GetEnvoyDiscoveryServices(cacheOptions *parameter.SourceOpti
 
 		cloudMapClient := servicediscovery.NewFromConfig(d.config)
 
-		services = append(
-			services,
-			awsdriver.NewCloudMapServiceDiscovery(
-				d.binder.Viper.GetStringSlice(DriversAwsCloudMapNamespacesNames),
-				d.binder.Viper.GetString(DriversAwsCloudMapParameterUriTag),
-				cacheOptions,
-				cloudMapClient,
-				d.logger,
-			),
+		var domainRegistry *awsdriver.Route53DomainRegistry = nil
+
+		if d.binder.Viper.GetBool(DriversAwsRoute53DomainRegistryEnable) {
+
+			route53Client := route53.NewFromConfig(d.config)
+
+			domainRegistry = awsdriver.NewRoute53DomainRegistry(route53Client, d.logger)
+
+		}
+
+		service := awsdriver.NewCloudMapServiceDiscovery(
+			d.binder.Viper.GetStringSlice(DriversAwsCloudMapNamespacesNames),
+			d.binder.Viper.GetString(DriversAwsCloudMapParameterUriTag),
+			cacheOptions,
+			cloudMapClient,
+			d.logger,
+			domainRegistry,
 		)
 
-	}
-
-	if d.binder.Viper.GetBool(DriversAwsRoute53DomainRegistryEnable) {
-
-		route53Client := route53.NewFromConfig(d.config)
-
-		services = append(services, awsdriver.NewRoute53DomainRegistry(route53Client, d.logger))
+		services = append(services, service)
 
 	}
 

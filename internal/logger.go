@@ -16,14 +16,20 @@ var (
 func AttachLoggingOptions(flagSet *pflag.FlagSet, viperInstance *viper.Viper) {
 
 	flagSet.String("log-level", "debug", "Logging level of stdout (debug, info or error)")
+	flagSet.String("log-env", "prod", "Logging env (prod or dev)")
 
 	viperInstance.BindPFlag("log.level", flagSet.Lookup("log-level"))
+	viperInstance.BindPFlag("log.env", flagSet.Lookup("log-env"))
 
 	Configuration = zap.NewProductionConfig()
 
 }
 
 func LoadLogger(viperInstance *viper.Viper) {
+
+	if viperInstance.GetString("log.env") == "dev" {
+		Configuration = zap.NewDevelopmentConfig()
+	}
 
 	switch viperInstance.Get("log.level") {
 

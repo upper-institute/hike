@@ -42,6 +42,18 @@ message DnsRecord {
     string cname_value = 4;
 }
 
+message IngressGateway {
+
+}
+
+message GrpcService {
+
+}
+
+message HttpService {
+
+}
+
 message Service {
     string service_name = 1;
     string service_id = 2;

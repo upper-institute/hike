@@ -2,6 +2,7 @@ package awsdriver
 
 import (
 	"context"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
@@ -33,17 +34,19 @@ func NewS3ParameterStorage(
 
 func (s *s3ParameterFile) Download(ctx context.Context, param *parameter.Parameter) error {
 
+	objectKey := strings.TrimLeft(param.GetPath(), "/")
+
 	log := s.logger.With(
 		"parameter_key", param.GetKey(),
 		"bucket", param.GetHost(),
-		"object_key", param.GetPath(),
+		"object_key", objectKey,
 	)
 
 	log.Infow("Download parameter file from S3")
 
 	headObjectInput := &s3.HeadObjectInput{
 		Bucket: aws.String(param.GetHost()),
-		Key:    aws.String(param.GetPath()),
+		Key:    aws.String(objectKey),
 	}
 
 	headObjectOutput, err := s.s3Client.HeadObject(ctx, headObjectInput)
@@ -85,17 +88,19 @@ func (s *s3ParameterFile) Download(ctx context.Context, param *parameter.Paramet
 
 func (s *s3ParameterFile) Upload(ctx context.Context, param *parameter.Parameter) error {
 
+	objectKey := strings.TrimLeft(param.GetPath(), "/")
+
 	log := s.logger.With(
 		"parameter_key", param.GetKey(),
 		"bucket", param.GetHost(),
-		"object_key", param.GetPath(),
+		"object_key", objectKey,
 	)
 
 	log.Infow("Upload parameter file to S3")
 
 	input := &s3.PutObjectInput{
 		Bucket: aws.String(param.GetHost()),
-		Key:    aws.String(param.GetPath()),
+		Key:    aws.String(objectKey),
 		Body:   param.GetFile(),
 	}
 

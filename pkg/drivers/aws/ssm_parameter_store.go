@@ -75,6 +75,8 @@ func (s *ssmParameterStore) Pull(ctx context.Context, options *parameter.PullReq
 
 	}
 
+	close(options.Result)
+
 	return nil
 
 }

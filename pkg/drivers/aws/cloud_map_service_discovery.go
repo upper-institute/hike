@@ -34,6 +34,8 @@ type cloudMapServiceDiscovery struct {
 	cloudMapClient         *servicediscovery.Client
 
 	logger *zap.SugaredLogger
+
+	domainRegistry *Route53DomainRegistry
 }
 
 func NewCloudMapServiceDiscovery(
@@ -42,14 +44,18 @@ func NewCloudMapServiceDiscovery(
 	parameterSourceOptions *parameter.SourceOptions,
 	cloudMapClient *servicediscovery.Client,
 	logger *zap.SugaredLogger,
+	domainRegistry *Route53DomainRegistry,
 ) servicemesh.EnvoyDiscoveryService {
+
 	return &cloudMapServiceDiscovery{
 		namespacesNames,
 		parameterUriTag,
 		parameterSourceOptions,
 		cloudMapClient,
 		logger,
+		domainRegistry,
 	}
+
 }
 
 func (c *cloudMapServiceDiscovery) getListNamespacesInputFilters() []servicediscoverytypes.NamespaceFilter {
@@ -140,6 +146,8 @@ func (c *cloudMapServiceDiscovery) getServiceParameters(op *cloudMapServiceDisco
 	if err != nil {
 		return nil, err
 	}
+
+	op.logger.Debug("Parameter restored")
 
 	return parameterCache, nil
 
@@ -252,7 +260,7 @@ func (c *cloudMapServiceDiscovery) discoverService(op *cloudMapServiceDiscovery_
 		op.service.ServiceName = aws.ToString(op.serviceSummary.Name)
 	}
 
-	if op.service.EnvoyCluster != nil {
+	if op.service.EnvoyCluster != nil && op.service.EnvoyEndpoints != nil {
 
 		op.logger.Debugw("Loading endpoints from Cloud Map")
 
@@ -268,6 +276,8 @@ func (c *cloudMapServiceDiscovery) discoverService(op *cloudMapServiceDiscovery_
 }
 
 func (c *cloudMapServiceDiscovery) Discover(ctx context.Context, svcCh chan *sdapi.Service) {
+
+	defer close(svcCh)
 
 	listServicesFilters, err := c.getListServicesInputFilters(ctx)
 	if err != nil {
@@ -308,10 +318,26 @@ func (c *cloudMapServiceDiscovery) Discover(ctx context.Context, svcCh chan *sda
 			if svc != nil {
 				op.logger.Info("Sending service through discovery channel")
 				svcCh <- svc
+
+				if c.domainRegistry != nil && svc.DnsRecords != nil {
+
+					op.logger.Info("Found dns records in this service")
+
+					for _, record := range svc.DnsRecords {
+						err = c.domainRegistry.registerDnsRecord(op.ctx, record)
+						if err != nil {
+							c.logger.Error(err)
+						}
+					}
+
+				}
+
 			}
 
 		}
 
 	}
+
+	c.logger.Info("End of cloud map service discovery")
 
 }

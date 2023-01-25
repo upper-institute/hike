@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/route53"
 	"github.com/aws/aws-sdk-go-v2/service/route53/types"
-	"github.com/upper-institute/hike/pkg/servicemesh"
 	sdapi "github.com/upper-institute/hike/proto/api/service-discovery"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -18,8 +17,8 @@ import (
 const domainSeparator = "."
 
 type route53DomainRegistry_Registration struct {
-	ctx           context.Context
-	ingressDomain *sdapi.DnsRecord
+	ctx    context.Context
+	record *sdapi.DnsRecord
 
 	logger *zap.SugaredLogger
 
@@ -28,7 +27,7 @@ type route53DomainRegistry_Registration struct {
 	recordType   types.RRType
 }
 
-type route53DomainRegistry struct {
+type Route53DomainRegistry struct {
 	route53Client *route53.Client
 
 	logger *zap.SugaredLogger
@@ -37,14 +36,14 @@ type route53DomainRegistry struct {
 func NewRoute53DomainRegistry(
 	route53Client *route53.Client,
 	logger *zap.SugaredLogger,
-) servicemesh.EnvoyDiscoveryService {
-	return &route53DomainRegistry{
+) *Route53DomainRegistry {
+	return &Route53DomainRegistry{
 		route53Client: route53Client,
 		logger:        logger,
 	}
 }
 
-func (id *route53DomainRegistry) listRecords(registration *route53DomainRegistry_Registration) ([]*types.ResourceRecordSet, error) {
+func (id *Route53DomainRegistry) listRecords(registration *route53DomainRegistry_Registration) ([]*types.ResourceRecordSet, error) {
 
 	listResourceRecordSetsOutput, err := id.route53Client.ListResourceRecordSets(
 		registration.ctx,
@@ -76,7 +75,7 @@ func (id *route53DomainRegistry) listRecords(registration *route53DomainRegistry
 
 }
 
-func (id *route53DomainRegistry) changeRecord(registration *route53DomainRegistry_Registration, changes []types.Change) (*route53.ChangeResourceRecordSetsOutput, error) {
+func (id *Route53DomainRegistry) changeRecord(registration *route53DomainRegistry_Registration, changes []types.Change) (*route53.ChangeResourceRecordSetsOutput, error) {
 
 	changeRecordSetInput := &route53.ChangeResourceRecordSetsInput{
 		HostedZoneId: aws.String(registration.hostedZoneId),
@@ -90,7 +89,7 @@ func (id *route53DomainRegistry) changeRecord(registration *route53DomainRegistr
 
 }
 
-func (id *route53DomainRegistry) registerCname(registration *route53DomainRegistry_Registration) error {
+func (id *Route53DomainRegistry) registerCname(registration *route53DomainRegistry_Registration) error {
 
 	registration.recordType = types.RRTypeCname
 
@@ -100,7 +99,7 @@ func (id *route53DomainRegistry) registerCname(registration *route53DomainRegist
 	}
 
 	resourceRecords := []types.ResourceRecord{{
-		Value: aws.String(registration.ingressDomain.CnameValue),
+		Value: aws.String(registration.record.CnameValue),
 	}}
 
 	if len(recordSet) == 0 {
@@ -112,7 +111,7 @@ func (id *route53DomainRegistry) registerCname(registration *route53DomainRegist
 			ResourceRecordSet: &types.ResourceRecordSet{
 				Name:            aws.String(registration.fqdn),
 				Type:            types.RRTypeCname,
-				TTL:             aws.Int64(int64(registration.ingressDomain.Ttl.AsDuration().Seconds())),
+				TTL:             aws.Int64(int64(registration.record.Ttl.AsDuration().Seconds())),
 				ResourceRecords: resourceRecords,
 			},
 		}})
@@ -126,7 +125,7 @@ func (id *route53DomainRegistry) registerCname(registration *route53DomainRegist
 
 		for _, rr := range record.ResourceRecords {
 
-			if aws.ToString(rr.Value) == registration.ingressDomain.CnameValue {
+			if aws.ToString(rr.Value) == registration.record.CnameValue {
 
 				registration.logger.Debugw("No need to update cname value, skipping action", "record_fqdn", aws.ToString(record.Name))
 
@@ -153,12 +152,12 @@ func (id *route53DomainRegistry) registerCname(registration *route53DomainRegist
 
 }
 
-func (id *route53DomainRegistry) RegisterDnsRecord(ctx context.Context, ingressDomain *sdapi.DnsRecord) error {
+func (id *Route53DomainRegistry) registerDnsRecord(ctx context.Context, record *sdapi.DnsRecord) error {
 
-	logger := id.logger.With("zone", ingressDomain.Zone, "record_name", ingressDomain.RecordName)
+	logger := id.logger.With("zone", record.Zone, "record_name", record.RecordName)
 
 	listHostedZonesOutput, err := id.route53Client.ListHostedZonesByName(ctx, &route53.ListHostedZonesByNameInput{
-		DNSName:  aws.String(ingressDomain.Zone),
+		DNSName:  aws.String(record.Zone),
 		MaxItems: aws.Int32(1),
 	})
 	if err != nil {
@@ -166,28 +165,28 @@ func (id *route53DomainRegistry) RegisterDnsRecord(ctx context.Context, ingressD
 	}
 
 	if len(listHostedZonesOutput.HostedZones) == 0 {
-		return fmt.Errorf("Found 0 hosted zones (ingress zone: %s)", ingressDomain.Zone)
+		return fmt.Errorf("Found 0 hosted zones (ingress zone: %s)", record.Zone)
 	}
 
-	if !ingressDomain.Ttl.IsValid() {
-		ingressDomain.Ttl = durationpb.New(30 * time.Second)
+	if !record.Ttl.IsValid() {
+		record.Ttl = durationpb.New(30 * time.Second)
 	}
 
 	registration := &route53DomainRegistry_Registration{
-		ctx:           ctx,
-		hostedZoneId:  aws.ToString(listHostedZonesOutput.HostedZones[0].Id),
-		ingressDomain: ingressDomain,
-		logger:        logger,
+		ctx:          ctx,
+		hostedZoneId: aws.ToString(listHostedZonesOutput.HostedZones[0].Id),
+		record:       record,
+		logger:       logger,
 		fqdn: strings.Join(
 			[]string{
-				strings.TrimRight(ingressDomain.RecordName, domainSeparator),
-				strings.TrimLeft(ingressDomain.Zone, domainSeparator),
+				strings.TrimRight(record.RecordName, domainSeparator),
+				strings.TrimLeft(record.Zone, domainSeparator),
 			},
 			domainSeparator,
 		),
 	}
 
-	if len(ingressDomain.CnameValue) > 0 {
+	if len(record.CnameValue) > 0 {
 
 		logger.Infow("Ingress domain is a CNAME value")
 
@@ -199,6 +198,8 @@ func (id *route53DomainRegistry) RegisterDnsRecord(ctx context.Context, ingressD
 	return nil
 }
 
-func (r *route53DomainRegistry) Discover(ctx context.Context, svcCh chan *sdapi.Service) {
+func (r *Route53DomainRegistry) Discover(ctx context.Context, svcCh chan *sdapi.Service) {
+
+	defer close(svcCh)
 
 }

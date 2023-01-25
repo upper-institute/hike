@@ -73,6 +73,8 @@ func (e *EnvoyDiscoveryServer) discover() {
 
 	for {
 
+		e.logger.Info("New discover cycle")
+
 		wg := sync.WaitGroup{}
 		ctx, cancel := context.WithCancel(context.Background())
 
@@ -92,6 +94,8 @@ func (e *EnvoyDiscoveryServer) discover() {
 		}()
 
 		// Execute discovery services in parallel
+
+		e.logger.Infow("Execute discovery services", "service_count", len(e.options.Services))
 
 		for _, s := range e.options.Services {
 
@@ -113,12 +117,15 @@ func (e *EnvoyDiscoveryServer) discover() {
 
 		}
 
-		wg.Wait()
+		e.logger.Info("Waiting for discovery services...")
 
+		wg.Wait()
 		close(applySvcCh)
 		cancel()
 
 		// Update cache if snapshot hash doesn't match
+
+		e.logger.Info("Updating resources cache")
 
 		newHash := res.Hash()
 
@@ -139,6 +146,8 @@ func (e *EnvoyDiscoveryServer) discover() {
 			hash = newHash
 
 		}
+
+		e.logger.Infow("Sleeping before new discover cycle", "watch_interval", e.options.WatchInterval)
 
 		time.Sleep(e.options.WatchInterval)
 
