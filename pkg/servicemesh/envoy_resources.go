@@ -14,6 +14,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/stream/v3"
 	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
@@ -70,6 +71,9 @@ func (r *Resources) ApplyService(svc *sdapi.Service) {
 			LbPolicy:             clusterv3.Cluster_ROUND_ROBIN,
 			DnsLookupFamily:      clusterv3.Cluster_V4_ONLY,
 			LoadAssignment:       loadAssignment,
+			Http2ProtocolOptions: &corev3.Http2ProtocolOptions{
+				MaxConcurrentStreams: wrapperspb.UInt32(2147483647),
+			},
 		}
 
 		r.resourceMap[resource.ClusterType] = append(r.resourceMap[resource.ClusterType], cluster)
