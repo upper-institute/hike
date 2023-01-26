@@ -231,10 +231,6 @@ func (r *Resources) DoSnapshot(version int64) (*cache.Snapshot, error) {
 		return nil, err
 	}
 
-	// if err := snapshot.ConstructVersionMap(); err != nil {
-	// 	return nil, err
-	// }
-
 	return snapshot, nil
 
 }

@@ -6,7 +6,7 @@ WORKDIR /build
 
 RUN CGO_ENABLED=0 go build -o hike ./cmd/main.go
 
-FROM docker.io/envoyproxy/envoy:v1.24-latest
+FROM docker.io/envoyproxy/envoy:v1.23-latest
 
 LABEL "organization.name"="upper-institute"
 LABEL "organization.repository"="hike"

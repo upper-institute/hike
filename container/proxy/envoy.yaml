@@ -7,22 +7,18 @@ node:
   id: hike-node
 
 dynamic_resources:
+  ads_config:
+    api_type: GRPC
+    transport_api_version: V3
+    grpc_services:
+    - envoy_grpc:
+        cluster_name: xds-cluster
   lds_config:
     resource_api_version: V3
-    api_config_source:
-      api_type: GRPC
-      transport_api_version: V3
-      grpc_services:
-        - envoy_grpc:
-            cluster_name: xds-cluster
+    ads: {}
   cds_config:
     resource_api_version: V3
-    api_config_source:
-      api_type: GRPC
-      transport_api_version: V3
-      grpc_services:
-        - envoy_grpc:
-            cluster_name: xds-cluster
+    ads: {}
 
 static_resources:
 
@@ -35,10 +31,6 @@ static_resources:
           explicit_http_config:
             http2_protocol_options: {}
       name: xds-cluster
-      transport_socket:
-        name: envoy.transport_sockets.tls
-        typed_config:
-          '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
       load_assignment:
         cluster_name: xds-cluster
         endpoints:
