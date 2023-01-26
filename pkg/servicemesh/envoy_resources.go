@@ -3,6 +3,7 @@ package servicemesh
 import (
 	"crypto/sha256"
 	"strconv"
+	"time"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
@@ -12,6 +13,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/stream/v3"
 	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
@@ -24,23 +26,27 @@ import (
 	clusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	corev3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	listenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	routev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	http_connection_managerv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 )
 
 type Resources struct {
-	resourceMap map[string][]types.Resource
-	logger      *zap.SugaredLogger
+	virtualHosts VirtualHostMap
+	resourceMap  map[string][]types.Resource
+	logger       *zap.SugaredLogger
 }
 
 func NewResources(logger *zap.SugaredLogger) *Resources {
 	return &Resources{
+		virtualHosts: make(VirtualHostMap),
 		resourceMap: map[string][]types.Resource{
-			resource.EndpointType: {},
-			resource.ClusterType:  {},
-			resource.SecretType:   {},
-			resource.RouteType:    {},
-			resource.ListenerType: {},
-			resource.RuntimeType:  {},
+			resource.EndpointType:    {},
+			resource.ClusterType:     {},
+			resource.SecretType:      {},
+			resource.RouteType:       {},
+			resource.ListenerType:    {},
+			resource.RuntimeType:     {},
+			resource.VirtualHostType: {},
 		},
 		logger: logger,
 	}
@@ -54,10 +60,13 @@ func (r *Resources) ApplyService(svc *sdapi.Service) {
 
 	if cluster != nil {
 
-		cluster.Name = svc.ServiceName
-
-		if cluster.EdsClusterConfig == nil {
-			cluster.EdsClusterConfig = &clusterv3.Cluster_EdsClusterConfig{
+		cluster = &clusterv3.Cluster{
+			Name:                 svc.ServiceName,
+			ConnectTimeout:       durationpb.New(15 * time.Second),
+			ClusterDiscoveryType: &clusterv3.Cluster_Type{Type: clusterv3.Cluster_EDS},
+			LbPolicy:             clusterv3.Cluster_ROUND_ROBIN,
+			DnsLookupFamily:      clusterv3.Cluster_V4_ONLY,
+			EdsClusterConfig: &clusterv3.Cluster_EdsClusterConfig{
 				ServiceName: svc.ServiceName,
 				EdsConfig: &corev3.ConfigSource{
 					ResourceApiVersion: resource.DefaultAPIVersion,
@@ -68,13 +77,15 @@ func (r *Resources) ApplyService(svc *sdapi.Service) {
 							SetNodeOnFirstMessageOnly: true,
 							GrpcServices: []*corev3.GrpcService{{
 								TargetSpecifier: &corev3.GrpcService_EnvoyGrpc_{
-									EnvoyGrpc: &corev3.GrpcService_EnvoyGrpc{ClusterName: svc.XdsClusterName},
+									EnvoyGrpc: &corev3.GrpcService_EnvoyGrpc{
+										ClusterName: svc.XdsClusterName,
+									},
 								},
 							}},
 						},
 					},
 				},
-			}
+			},
 		}
 
 		r.resourceMap[resource.ClusterType] = append(r.resourceMap[resource.ClusterType], cluster)
@@ -95,7 +106,7 @@ func (r *Resources) ApplyService(svc *sdapi.Service) {
 							ApiConfigSource: &corev3.ApiConfigSource{
 								ApiType:                   corev3.ApiConfigSource_GRPC,
 								TransportApiVersion:       resource.DefaultAPIVersion,
-								SetNodeOnFirstMessageOnly: true,
+								SetNodeOnFirstMessageOnly: false,
 								GrpcServices: []*corev3.GrpcService{{
 									TargetSpecifier: &corev3.GrpcService_EnvoyGrpc_{
 										EnvoyGrpc: &corev3.GrpcService_EnvoyGrpc{
@@ -147,14 +158,39 @@ func (r *Resources) ApplyService(svc *sdapi.Service) {
 			},
 		)
 
+		r.resourceMap[resource.RouteType] = append(r.resourceMap[resource.RouteType], &routev3.RouteConfiguration{
+			Name:                     svc.ServiceName,
+			IgnorePortInHostMatching: true,
+			Vhds: &routev3.Vhds{
+				ConfigSource: &corev3.ConfigSource{
+					ResourceApiVersion: resource.DefaultAPIVersion,
+					ConfigSourceSpecifier: &corev3.ConfigSource_ApiConfigSource{
+						ApiConfigSource: &corev3.ApiConfigSource{
+							ApiType:                   corev3.ApiConfigSource_DELTA_GRPC,
+							TransportApiVersion:       resource.DefaultAPIVersion,
+							SetNodeOnFirstMessageOnly: true,
+							GrpcServices: []*corev3.GrpcService{{
+								TargetSpecifier: &corev3.GrpcService_EnvoyGrpc_{
+									EnvoyGrpc: &corev3.GrpcService_EnvoyGrpc{
+										ClusterName: svc.XdsClusterName,
+									},
+								},
+							}},
+						},
+					},
+				},
+			},
+		})
+
 	}
 
 	for _, endpoint := range svc.EnvoyEndpoints {
+		endpoint.ClusterName = svc.ServiceName
 		r.resourceMap[resource.EndpointType] = append(r.resourceMap[resource.EndpointType], endpoint)
 	}
 
 	for _, route := range svc.EnvoyRoutes {
-		r.resourceMap[resource.RouteType] = append(r.resourceMap[resource.RouteType], route)
+		r.virtualHosts.MergeRoute(route)
 	}
 
 }
@@ -184,6 +220,8 @@ func (r *Resources) Hash() []byte {
 
 func (r *Resources) DoSnapshot(version int64) (*cache.Snapshot, error) {
 
+	r.resourceMap[resource.VirtualHostType] = r.virtualHosts.ToResourceSlice()
+
 	snapshot, err := cache.NewSnapshot(strconv.FormatInt(version, 10), r.resourceMap)
 	if err != nil {
 		return nil, err
@@ -192,6 +230,10 @@ func (r *Resources) DoSnapshot(version int64) (*cache.Snapshot, error) {
 	if err := snapshot.Consistent(); err != nil {
 		return nil, err
 	}
+
+	// if err := snapshot.ConstructVersionMap(); err != nil {
+	// 	return nil, err
+	// }
 
 	return snapshot, nil
 

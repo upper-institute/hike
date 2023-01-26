@@ -63,6 +63,7 @@ func (e *EnvoyDiscoveryServer) Register(grpcServer *grpc.Server) {
 	listenerservice.RegisterListenerDiscoveryServiceServer(grpcServer, e.server)
 	secretservice.RegisterSecretDiscoveryServiceServer(grpcServer, e.server)
 	runtimeservice.RegisterRuntimeDiscoveryServiceServer(grpcServer, e.server)
+	routeservice.RegisterVirtualHostDiscoveryServiceServer(grpcServer, e.server)
 
 }
 
@@ -121,7 +122,6 @@ func (e *EnvoyDiscoveryServer) discover() {
 
 		wg.Wait()
 		close(applySvcCh)
-		cancel()
 
 		// Update cache if snapshot hash doesn't match
 
@@ -138,18 +138,22 @@ func (e *EnvoyDiscoveryServer) discover() {
 			snapshot, err := res.DoSnapshot(version)
 			if err != nil {
 				e.logger.Error(err)
+				cancel()
 				continue
 			}
 
 			err = e.cache.SetSnapshot(ctx, e.options.NodeID, snapshot)
 			if err != nil {
 				e.logger.Error(err)
+				cancel()
 				continue
 			}
 
 			hash = newHash
 
 		}
+
+		cancel()
 
 		e.logger.Infow("Sleeping before new discover cycle", "watch_interval", e.options.WatchInterval, "version", version)
 

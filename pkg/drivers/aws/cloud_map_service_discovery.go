@@ -204,12 +204,11 @@ func (c *cloudMapServiceDiscovery) discoverEndpoints(op *cloudMapServiceDiscover
 
 	}
 
-	for _, loadAssignment := range op.service.EnvoyEndpoints {
-		loadAssignment.ClusterName = op.service.ServiceName
-		loadAssignment.Endpoints = []*endpointv3.LocalityLbEndpoints{{
+	op.service.EnvoyEndpoints = []*endpointv3.ClusterLoadAssignment{{
+		Endpoints: []*endpointv3.LocalityLbEndpoints{{
 			LbEndpoints: lbEndpoints,
-		}}
-	}
+		}},
+	}}
 
 	return nil
 
