@@ -31,6 +31,10 @@ static_resources:
           explicit_http_config:
             http2_protocol_options: {}
       name: xds-cluster
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
       load_assignment:
         cluster_name: xds-cluster
         endpoints:

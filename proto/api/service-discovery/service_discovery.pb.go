@@ -209,27 +209,141 @@ func (x *DnsRecord) GetCnameValue() string {
 	return ""
 }
 
+type IngressGateway struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *IngressGateway) Reset() {
+	*x = IngressGateway{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_api_service_discovery_service_discovery_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *IngressGateway) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IngressGateway) ProtoMessage() {}
+
+func (x *IngressGateway) ProtoReflect() protoreflect.Message {
+	mi := &file_api_service_discovery_service_discovery_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IngressGateway.ProtoReflect.Descriptor instead.
+func (*IngressGateway) Descriptor() ([]byte, []int) {
+	return file_api_service_discovery_service_discovery_proto_rawDescGZIP(), []int{2}
+}
+
+type GrpcService struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *GrpcService) Reset() {
+	*x = GrpcService{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_api_service_discovery_service_discovery_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GrpcService) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GrpcService) ProtoMessage() {}
+
+func (x *GrpcService) ProtoReflect() protoreflect.Message {
+	mi := &file_api_service_discovery_service_discovery_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GrpcService.ProtoReflect.Descriptor instead.
+func (*GrpcService) Descriptor() ([]byte, []int) {
+	return file_api_service_discovery_service_discovery_proto_rawDescGZIP(), []int{3}
+}
+
+type HttpService struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *HttpService) Reset() {
+	*x = HttpService{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_api_service_discovery_service_discovery_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *HttpService) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HttpService) ProtoMessage() {}
+
+func (x *HttpService) ProtoReflect() protoreflect.Message {
+	mi := &file_api_service_discovery_service_discovery_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HttpService.ProtoReflect.Descriptor instead.
+func (*HttpService) Descriptor() ([]byte, []int) {
+	return file_api_service_discovery_service_discovery_proto_rawDescGZIP(), []int{4}
+}
+
 type Service struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ServiceName                string                       `protobuf:"bytes,1,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
-	ServiceId                  string                       `protobuf:"bytes,2,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
-	XdsClusterName             string                       `protobuf:"bytes,3,opt,name=xds_cluster_name,json=xdsClusterName,proto3" json:"xds_cluster_name,omitempty"`
-	ListenPort                 uint32                       `protobuf:"varint,4,opt,name=listen_port,json=listenPort,proto3" json:"listen_port,omitempty"`
-	DnsRecords                 []*DnsRecord                 `protobuf:"bytes,6,rep,name=dns_records,json=dnsRecords,proto3" json:"dns_records,omitempty"`
-	AcmeProtocolCertificates   []*AcmeProtocolCertificate   `protobuf:"bytes,7,rep,name=acme_protocol_certificates,json=acmeProtocolCertificates,proto3" json:"acme_protocol_certificates,omitempty"`
-	EnvoyCluster               *v3.Cluster                  `protobuf:"bytes,9,opt,name=envoy_cluster,json=envoyCluster,proto3" json:"envoy_cluster,omitempty"`
-	EnvoyHttpConnectionManager *v31.HttpConnectionManager   `protobuf:"bytes,10,opt,name=envoy_http_connection_manager,json=envoyHttpConnectionManager,proto3" json:"envoy_http_connection_manager,omitempty"`
-	EnvoyRoutes                []*v32.RouteConfiguration    `protobuf:"bytes,8,rep,name=envoy_routes,json=envoyRoutes,proto3" json:"envoy_routes,omitempty"`
-	EnvoyEndpoints             []*v33.ClusterLoadAssignment `protobuf:"bytes,11,rep,name=envoy_endpoints,json=envoyEndpoints,proto3" json:"envoy_endpoints,omitempty"`
+	ServiceName                string                     `protobuf:"bytes,1,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	ServiceId                  string                     `protobuf:"bytes,2,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	XdsClusterName             string                     `protobuf:"bytes,3,opt,name=xds_cluster_name,json=xdsClusterName,proto3" json:"xds_cluster_name,omitempty"`
+	ListenPort                 uint32                     `protobuf:"varint,4,opt,name=listen_port,json=listenPort,proto3" json:"listen_port,omitempty"`
+	DnsRecords                 []*DnsRecord               `protobuf:"bytes,6,rep,name=dns_records,json=dnsRecords,proto3" json:"dns_records,omitempty"`
+	AcmeProtocolCertificates   []*AcmeProtocolCertificate `protobuf:"bytes,7,rep,name=acme_protocol_certificates,json=acmeProtocolCertificates,proto3" json:"acme_protocol_certificates,omitempty"`
+	EnvoyCluster               *v3.Cluster                `protobuf:"bytes,9,opt,name=envoy_cluster,json=envoyCluster,proto3" json:"envoy_cluster,omitempty"`
+	EnvoyHttpConnectionManager *v31.HttpConnectionManager `protobuf:"bytes,10,opt,name=envoy_http_connection_manager,json=envoyHttpConnectionManager,proto3" json:"envoy_http_connection_manager,omitempty"`
+	EnvoyRoutes                []*v32.RouteConfiguration  `protobuf:"bytes,8,rep,name=envoy_routes,json=envoyRoutes,proto3" json:"envoy_routes,omitempty"`
+	EnvoyClusterLoadAssignment *v33.ClusterLoadAssignment `protobuf:"bytes,11,opt,name=envoy_cluster_load_assignment,json=envoyClusterLoadAssignment,proto3" json:"envoy_cluster_load_assignment,omitempty"`
 }
 
 func (x *Service) Reset() {
 	*x = Service{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_api_service_discovery_service_discovery_proto_msgTypes[2]
+		mi := &file_api_service_discovery_service_discovery_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -242,7 +356,7 @@ func (x *Service) String() string {
 func (*Service) ProtoMessage() {}
 
 func (x *Service) ProtoReflect() protoreflect.Message {
-	mi := &file_api_service_discovery_service_discovery_proto_msgTypes[2]
+	mi := &file_api_service_discovery_service_discovery_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -255,7 +369,7 @@ func (x *Service) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Service.ProtoReflect.Descriptor instead.
 func (*Service) Descriptor() ([]byte, []int) {
-	return file_api_service_discovery_service_discovery_proto_rawDescGZIP(), []int{2}
+	return file_api_service_discovery_service_discovery_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Service) GetServiceName() string {
@@ -321,9 +435,9 @@ func (x *Service) GetEnvoyRoutes() []*v32.RouteConfiguration {
 	return nil
 }
 
-func (x *Service) GetEnvoyEndpoints() []*v33.ClusterLoadAssignment {
+func (x *Service) GetEnvoyClusterLoadAssignment() *v33.ClusterLoadAssignment {
 	if x != nil {
-		return x.EnvoyEndpoints
+		return x.EnvoyClusterLoadAssignment
 	}
 	return nil
 }
@@ -383,7 +497,10 @@ var file_api_service_discovery_service_discovery_proto_rawDesc = []byte{
 	0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x44, 0x75, 0x72, 0x61,
 	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x03, 0x74, 0x74, 0x6c, 0x12, 0x1f, 0x0a, 0x0b, 0x63, 0x6e, 0x61,
 	0x6d, 0x65, 0x5f, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a,
-	0x63, 0x6e, 0x61, 0x6d, 0x65, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x22, 0xe2, 0x05, 0x0a, 0x07, 0x53,
+	0x63, 0x6e, 0x61, 0x6d, 0x65, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x10, 0x0a, 0x0e, 0x49, 0x6e,
+	0x67, 0x72, 0x65, 0x73, 0x73, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x22, 0x0d, 0x0a, 0x0b,
+	0x47, 0x72, 0x70, 0x63, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x22, 0x0d, 0x0a, 0x0b, 0x48,
+	0x74, 0x74, 0x70, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x22, 0xfc, 0x05, 0x0a, 0x07, 0x53,
 	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x21, 0x0a, 0x0c, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
 	0x65, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x73, 0x65,
 	0x72, 0x76, 0x69, 0x63, 0x65, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x65, 0x72,
@@ -424,31 +541,32 @@ var file_api_service_discovery_service_discovery_proto_rawDesc = []byte{
 	0x65, 0x6e, 0x76, 0x6f, 0x79, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x72, 0x6f, 0x75,
 	0x74, 0x65, 0x2e, 0x76, 0x33, 0x2e, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69,
 	0x67, 0x75, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x65, 0x6e, 0x76, 0x6f, 0x79, 0x52,
-	0x6f, 0x75, 0x74, 0x65, 0x73, 0x12, 0x58, 0x0a, 0x0f, 0x65, 0x6e, 0x76, 0x6f, 0x79, 0x5f, 0x65,
-	0x6e, 0x64, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x73, 0x18, 0x0b, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x2f,
-	0x2e, 0x65, 0x6e, 0x76, 0x6f, 0x79, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x65, 0x6e,
-	0x64, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x2e, 0x76, 0x33, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65,
-	0x72, 0x4c, 0x6f, 0x61, 0x64, 0x41, 0x73, 0x73, 0x69, 0x67, 0x6e, 0x6d, 0x65, 0x6e, 0x74, 0x52,
-	0x0e, 0x65, 0x6e, 0x76, 0x6f, 0x79, 0x45, 0x6e, 0x64, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x73, 0x42,
-	0x9b, 0x02, 0x0a, 0x23, 0x63, 0x6f, 0x6d, 0x2e, 0x6f, 0x70, 0x73, 0x63, 0x6f, 0x6e, 0x74, 0x72,
-	0x6f, 0x6c, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x64, 0x69,
-	0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x42, 0x15, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
-	0x44, 0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01,
-	0x5a, 0x3f, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x75, 0x70, 0x70,
-	0x65, 0x72, 0x2d, 0x69, 0x6e, 0x73, 0x74, 0x69, 0x74, 0x75, 0x74, 0x65, 0x2f, 0x68, 0x69, 0x6b,
-	0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x70, 0x69, 0x2f,
-	0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2d, 0x64, 0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72,
-	0x79, 0xa2, 0x02, 0x03, 0x4f, 0x41, 0x53, 0xaa, 0x02, 0x1f, 0x4f, 0x70, 0x73, 0x63, 0x6f, 0x6e,
-	0x74, 0x72, 0x6f, 0x6c, 0x2e, 0x41, 0x70, 0x69, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
-	0x64, 0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0xca, 0x02, 0x1f, 0x4f, 0x70, 0x73, 0x63,
-	0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x5c, 0x41, 0x70, 0x69, 0x5c, 0x53, 0x65, 0x72, 0x76, 0x69,
-	0x63, 0x65, 0x64, 0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0xe2, 0x02, 0x2b, 0x4f, 0x70,
-	0x73, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x5c, 0x41, 0x70, 0x69, 0x5c, 0x53, 0x65, 0x72,
-	0x76, 0x69, 0x63, 0x65, 0x64, 0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x5c, 0x47, 0x50,
-	0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x21, 0x4f, 0x70, 0x73, 0x63,
-	0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x3a, 0x3a, 0x41, 0x70, 0x69, 0x3a, 0x3a, 0x53, 0x65, 0x72,
-	0x76, 0x69, 0x63, 0x65, 0x64, 0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x62, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6f, 0x75, 0x74, 0x65, 0x73, 0x12, 0x72, 0x0a, 0x1d, 0x65, 0x6e, 0x76, 0x6f, 0x79, 0x5f, 0x63,
+	0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x5f, 0x6c, 0x6f, 0x61, 0x64, 0x5f, 0x61, 0x73, 0x73, 0x69,
+	0x67, 0x6e, 0x6d, 0x65, 0x6e, 0x74, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2f, 0x2e, 0x65,
+	0x6e, 0x76, 0x6f, 0x79, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x65, 0x6e, 0x64, 0x70,
+	0x6f, 0x69, 0x6e, 0x74, 0x2e, 0x76, 0x33, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x4c,
+	0x6f, 0x61, 0x64, 0x41, 0x73, 0x73, 0x69, 0x67, 0x6e, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x1a, 0x65,
+	0x6e, 0x76, 0x6f, 0x79, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x4c, 0x6f, 0x61, 0x64, 0x41,
+	0x73, 0x73, 0x69, 0x67, 0x6e, 0x6d, 0x65, 0x6e, 0x74, 0x42, 0x9b, 0x02, 0x0a, 0x23, 0x63, 0x6f,
+	0x6d, 0x2e, 0x6f, 0x70, 0x73, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x64, 0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72,
+	0x79, 0x42, 0x15, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x44, 0x69, 0x73, 0x63, 0x6f, 0x76,
+	0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x3f, 0x67, 0x69, 0x74, 0x68,
+	0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x75, 0x70, 0x70, 0x65, 0x72, 0x2d, 0x69, 0x6e, 0x73,
+	0x74, 0x69, 0x74, 0x75, 0x74, 0x65, 0x2f, 0x68, 0x69, 0x6b, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
+	0x65, 0x2d, 0x64, 0x69, 0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0xa2, 0x02, 0x03, 0x4f, 0x41,
+	0x53, 0xaa, 0x02, 0x1f, 0x4f, 0x70, 0x73, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x2e, 0x41,
+	0x70, 0x69, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x64, 0x69, 0x73, 0x63, 0x6f, 0x76,
+	0x65, 0x72, 0x79, 0xca, 0x02, 0x1f, 0x4f, 0x70, 0x73, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c,
+	0x5c, 0x41, 0x70, 0x69, 0x5c, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x64, 0x69, 0x73, 0x63,
+	0x6f, 0x76, 0x65, 0x72, 0x79, 0xe2, 0x02, 0x2b, 0x4f, 0x70, 0x73, 0x63, 0x6f, 0x6e, 0x74, 0x72,
+	0x6f, 0x6c, 0x5c, 0x41, 0x70, 0x69, 0x5c, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x64, 0x69,
+	0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64,
+	0x61, 0x74, 0x61, 0xea, 0x02, 0x21, 0x4f, 0x70, 0x73, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c,
+	0x3a, 0x3a, 0x41, 0x70, 0x69, 0x3a, 0x3a, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x64, 0x69,
+	0x73, 0x63, 0x6f, 0x76, 0x65, 0x72, 0x79, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -463,30 +581,33 @@ func file_api_service_discovery_service_discovery_proto_rawDescGZIP() []byte {
 	return file_api_service_discovery_service_discovery_proto_rawDescData
 }
 
-var file_api_service_discovery_service_discovery_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_api_service_discovery_service_discovery_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_api_service_discovery_service_discovery_proto_goTypes = []interface{}{
 	(*AcmeProtocolCertificate)(nil),   // 0: opscontrol.api.servicediscovery.AcmeProtocolCertificate
 	(*DnsRecord)(nil),                 // 1: opscontrol.api.servicediscovery.DnsRecord
-	(*Service)(nil),                   // 2: opscontrol.api.servicediscovery.Service
-	(*durationpb.Duration)(nil),       // 3: google.protobuf.Duration
-	(*v3.Cluster)(nil),                // 4: envoy.config.cluster.v3.Cluster
-	(*v31.HttpConnectionManager)(nil), // 5: envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-	(*v32.RouteConfiguration)(nil),    // 6: envoy.config.route.v3.RouteConfiguration
-	(*v33.ClusterLoadAssignment)(nil), // 7: envoy.config.endpoint.v3.ClusterLoadAssignment
+	(*IngressGateway)(nil),            // 2: opscontrol.api.servicediscovery.IngressGateway
+	(*GrpcService)(nil),               // 3: opscontrol.api.servicediscovery.GrpcService
+	(*HttpService)(nil),               // 4: opscontrol.api.servicediscovery.HttpService
+	(*Service)(nil),                   // 5: opscontrol.api.servicediscovery.Service
+	(*durationpb.Duration)(nil),       // 6: google.protobuf.Duration
+	(*v3.Cluster)(nil),                // 7: envoy.config.cluster.v3.Cluster
+	(*v31.HttpConnectionManager)(nil), // 8: envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+	(*v32.RouteConfiguration)(nil),    // 9: envoy.config.route.v3.RouteConfiguration
+	(*v33.ClusterLoadAssignment)(nil), // 10: envoy.config.endpoint.v3.ClusterLoadAssignment
 }
 var file_api_service_discovery_service_discovery_proto_depIdxs = []int32{
-	3, // 0: opscontrol.api.servicediscovery.DnsRecord.ttl:type_name -> google.protobuf.Duration
-	1, // 1: opscontrol.api.servicediscovery.Service.dns_records:type_name -> opscontrol.api.servicediscovery.DnsRecord
-	0, // 2: opscontrol.api.servicediscovery.Service.acme_protocol_certificates:type_name -> opscontrol.api.servicediscovery.AcmeProtocolCertificate
-	4, // 3: opscontrol.api.servicediscovery.Service.envoy_cluster:type_name -> envoy.config.cluster.v3.Cluster
-	5, // 4: opscontrol.api.servicediscovery.Service.envoy_http_connection_manager:type_name -> envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-	6, // 5: opscontrol.api.servicediscovery.Service.envoy_routes:type_name -> envoy.config.route.v3.RouteConfiguration
-	7, // 6: opscontrol.api.servicediscovery.Service.envoy_endpoints:type_name -> envoy.config.endpoint.v3.ClusterLoadAssignment
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	6,  // 0: opscontrol.api.servicediscovery.DnsRecord.ttl:type_name -> google.protobuf.Duration
+	1,  // 1: opscontrol.api.servicediscovery.Service.dns_records:type_name -> opscontrol.api.servicediscovery.DnsRecord
+	0,  // 2: opscontrol.api.servicediscovery.Service.acme_protocol_certificates:type_name -> opscontrol.api.servicediscovery.AcmeProtocolCertificate
+	7,  // 3: opscontrol.api.servicediscovery.Service.envoy_cluster:type_name -> envoy.config.cluster.v3.Cluster
+	8,  // 4: opscontrol.api.servicediscovery.Service.envoy_http_connection_manager:type_name -> envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+	9,  // 5: opscontrol.api.servicediscovery.Service.envoy_routes:type_name -> envoy.config.route.v3.RouteConfiguration
+	10, // 6: opscontrol.api.servicediscovery.Service.envoy_cluster_load_assignment:type_name -> envoy.config.endpoint.v3.ClusterLoadAssignment
+	7,  // [7:7] is the sub-list for method output_type
+	7,  // [7:7] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_api_service_discovery_service_discovery_proto_init() }
@@ -520,6 +641,42 @@ func file_api_service_discovery_service_discovery_proto_init() {
 			}
 		}
 		file_api_service_discovery_service_discovery_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*IngressGateway); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_api_service_discovery_service_discovery_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GrpcService); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_api_service_discovery_service_discovery_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*HttpService); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_api_service_discovery_service_discovery_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Service); i {
 			case 0:
 				return &v.state
@@ -538,7 +695,7 @@ func file_api_service_discovery_service_discovery_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_api_service_discovery_service_discovery_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

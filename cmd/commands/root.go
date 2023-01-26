@@ -9,9 +9,12 @@ import (
 	"os"
 	"strings"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/upper-institute/hike/internal"
+	otelgrpc "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -35,18 +38,18 @@ var (
 			server := &http.Server{Handler: &grpcMatcher{}}
 
 			opts := []grpc.ServerOption{
-				// grpc.StreamInterceptor(
-				// 	grpc_middleware.ChainStreamServer(
-				// 		otelgrpc.StreamServerInterceptor(),
-				// 		grpc_zap.StreamServerInterceptor(internal.Logger),
-				// 	),
-				// ),
-				// grpc.UnaryInterceptor(
-				// 	grpc_middleware.ChainUnaryServer(
-				// 		otelgrpc.UnaryServerInterceptor(),
-				// 		grpc_zap.UnaryServerInterceptor(internal.Logger),
-				// 	),
-				// ),
+				grpc.StreamInterceptor(
+					grpc_middleware.ChainStreamServer(
+						otelgrpc.StreamServerInterceptor(),
+						grpc_zap.StreamServerInterceptor(internal.Logger),
+					),
+				),
+				grpc.UnaryInterceptor(
+					grpc_middleware.ChainUnaryServer(
+						otelgrpc.UnaryServerInterceptor(),
+						grpc_zap.UnaryServerInterceptor(internal.Logger),
+					),
+				),
 			}
 
 			tlsCert := viper.GetString("grpcServer.tls.cert")
@@ -69,7 +72,7 @@ var (
 
 			listenAddr := viper.GetString("grpcServer.listenAddr")
 
-			lis, err := net.Listen("tcp", listenAddr)
+			lis, err := tls.Listen("tcp", listenAddr, config)
 			if err != nil {
 				log.Fatalln("failed to listen to store address", listenAddr, "because", err)
 			}
@@ -104,7 +107,7 @@ var (
 
 				log.Infow("Server listening", "address", serverListener.Addr())
 
-				if err := grpcServer.Serve(serverListener); err != nil {
+				if err := server.Serve(serverListener); err != nil {
 					log.Fatalln("Failed to serve because", err)
 				}
 

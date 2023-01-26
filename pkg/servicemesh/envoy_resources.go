@@ -57,35 +57,19 @@ func (r *Resources) ApplyService(svc *sdapi.Service) {
 	r.logger.Infow("Apply service resources", "service_name", svc.ServiceName)
 
 	cluster := svc.EnvoyCluster
+	loadAssignment := svc.EnvoyClusterLoadAssignment
 
 	if cluster != nil {
+
+		loadAssignment.ClusterName = svc.ServiceName
 
 		cluster = &clusterv3.Cluster{
 			Name:                 svc.ServiceName,
 			ConnectTimeout:       durationpb.New(15 * time.Second),
-			ClusterDiscoveryType: &clusterv3.Cluster_Type{Type: clusterv3.Cluster_EDS},
+			ClusterDiscoveryType: &clusterv3.Cluster_Type{Type: clusterv3.Cluster_STATIC},
 			LbPolicy:             clusterv3.Cluster_ROUND_ROBIN,
 			DnsLookupFamily:      clusterv3.Cluster_V4_ONLY,
-			EdsClusterConfig: &clusterv3.Cluster_EdsClusterConfig{
-				ServiceName: svc.ServiceName,
-				EdsConfig: &corev3.ConfigSource{
-					ResourceApiVersion: resource.DefaultAPIVersion,
-					ConfigSourceSpecifier: &corev3.ConfigSource_ApiConfigSource{
-						ApiConfigSource: &corev3.ApiConfigSource{
-							TransportApiVersion:       resource.DefaultAPIVersion,
-							ApiType:                   corev3.ApiConfigSource_GRPC,
-							SetNodeOnFirstMessageOnly: true,
-							GrpcServices: []*corev3.GrpcService{{
-								TargetSpecifier: &corev3.GrpcService_EnvoyGrpc_{
-									EnvoyGrpc: &corev3.GrpcService_EnvoyGrpc{
-										ClusterName: svc.XdsClusterName,
-									},
-								},
-							}},
-						},
-					},
-				},
-			},
+			LoadAssignment:       loadAssignment,
 		}
 
 		r.resourceMap[resource.ClusterType] = append(r.resourceMap[resource.ClusterType], cluster)
@@ -104,7 +88,7 @@ func (r *Resources) ApplyService(svc *sdapi.Service) {
 						ResourceApiVersion: resource.DefaultAPIVersion,
 						ConfigSourceSpecifier: &corev3.ConfigSource_ApiConfigSource{
 							ApiConfigSource: &corev3.ApiConfigSource{
-								ApiType:                   corev3.ApiConfigSource_GRPC,
+								ApiType:                   corev3.ApiConfigSource_DELTA_GRPC,
 								TransportApiVersion:       resource.DefaultAPIVersion,
 								SetNodeOnFirstMessageOnly: false,
 								GrpcServices: []*corev3.GrpcService{{
@@ -182,11 +166,6 @@ func (r *Resources) ApplyService(svc *sdapi.Service) {
 			},
 		})
 
-	}
-
-	for _, endpoint := range svc.EnvoyEndpoints {
-		endpoint.ClusterName = svc.ServiceName
-		r.resourceMap[resource.EndpointType] = append(r.resourceMap[resource.EndpointType], endpoint)
 	}
 
 	for _, route := range svc.EnvoyRoutes {

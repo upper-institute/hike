@@ -3,6 +3,7 @@ package servicemesh
 import (
 	"bytes"
 	"context"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -75,9 +76,23 @@ func (e *EnvoyDiscoveryServer) discover() {
 
 		e.logger.Info("New discover cycle")
 
-		ctx := context.Background()
+		wg := sync.WaitGroup{}
+		ctx, cancel := context.WithCancel(context.Background())
 
+		if e.options.ServiceDiscoverTimeout > 0 {
+			ctx, cancel = context.WithTimeout(ctx, e.options.ServiceDiscoverTimeout)
+		}
+
+		applySvcCh := make(chan *sdapi.Service)
 		res := NewResources(e.logger)
+
+		go func() {
+
+			for applySvc := range applySvcCh {
+				res.ApplyService(applySvc)
+			}
+
+		}()
 
 		// Execute discovery services in parallel
 
@@ -85,17 +100,28 @@ func (e *EnvoyDiscoveryServer) discover() {
 
 		for _, s := range e.options.Services {
 
-			svcCh := make(chan *sdapi.Service)
+			wg.Add(1)
 
-			go s.Discover(ctx, svcCh)
+			go func(service EnvoyDiscoveryService) {
 
-			for applySvc := range svcCh {
-				res.ApplyService(applySvc)
-			}
+				defer wg.Done()
+
+				svcCh := make(chan *sdapi.Service)
+
+				go service.Discover(ctx, svcCh)
+
+				for applySvc := range svcCh {
+					applySvcCh <- applySvc
+				}
+
+			}(s)
 
 		}
 
 		e.logger.Info("Waiting for discovery services...")
+
+		wg.Wait()
+		close(applySvcCh)
 
 		// Update cache if snapshot hash doesn't match
 
@@ -110,12 +136,14 @@ func (e *EnvoyDiscoveryServer) discover() {
 			snapshot, err := res.DoSnapshot(version)
 			if err != nil {
 				e.logger.Error(err)
+				cancel()
 				continue
 			}
 
 			err = e.cache.SetSnapshot(ctx, e.options.NodeID, snapshot)
 			if err != nil {
 				e.logger.Error(err)
+				cancel()
 				continue
 			}
 
@@ -123,6 +151,8 @@ func (e *EnvoyDiscoveryServer) discover() {
 			hash = newHash
 
 		}
+
+		cancel()
 
 		e.logger.Infow("Sleeping before new discover cycle", "watch_interval", e.options.WatchInterval, "version", version)
 

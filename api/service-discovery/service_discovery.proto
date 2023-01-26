@@ -72,5 +72,5 @@ message Service {
     envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager envoy_http_connection_manager = 10;
 
     repeated envoy.config.route.v3.RouteConfiguration envoy_routes = 8;
-    repeated envoy.config.endpoint.v3.ClusterLoadAssignment envoy_endpoints = 11;
+    envoy.config.endpoint.v3.ClusterLoadAssignment envoy_cluster_load_assignment = 11;
 }

@@ -204,11 +204,11 @@ func (c *cloudMapServiceDiscovery) discoverEndpoints(op *cloudMapServiceDiscover
 
 	}
 
-	op.service.EnvoyEndpoints = []*endpointv3.ClusterLoadAssignment{{
+	op.service.EnvoyClusterLoadAssignment = &endpointv3.ClusterLoadAssignment{
 		Endpoints: []*endpointv3.LocalityLbEndpoints{{
 			LbEndpoints: lbEndpoints,
 		}},
-	}}
+	}
 
 	return nil
 
@@ -259,7 +259,7 @@ func (c *cloudMapServiceDiscovery) discoverService(op *cloudMapServiceDiscovery_
 		op.service.ServiceName = aws.ToString(op.serviceSummary.Name)
 	}
 
-	if op.service.EnvoyCluster != nil && op.service.EnvoyEndpoints != nil {
+	if op.service.EnvoyCluster != nil {
 
 		op.logger.Debugw("Loading endpoints from Cloud Map")
 
