@@ -14,7 +14,7 @@ LABEL "repository.application"="hike"
 
 COPY --from=builder /build/hike /usr/local/bin/
 
-WORKDIR /etc/envoy/
+WORKDIR /etc/hike/
 
 CMD ["hike", "-h"]
 
