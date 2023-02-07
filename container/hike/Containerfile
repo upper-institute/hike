@@ -16,5 +16,14 @@ COPY --from=builder /build/hike /usr/local/bin/
 
 WORKDIR /etc/hike/
 
+COPY server.key ./
+COPY server.crt ./
+
+RUN groupadd -r hike && useradd -r -g hike hike
+
+RUN chown hike:hike server.key server.crt
+
+USER hike
+
 CMD ["hike", "-h"]
 
