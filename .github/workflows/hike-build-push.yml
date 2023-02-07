@@ -7,8 +7,8 @@ on:
     paths:
       - internal/**
       - cmd/**
-      - gen/**
-      - providers/**
+      - pkg/**
+      - proto/**
       - container/hike/**
 
 env:
