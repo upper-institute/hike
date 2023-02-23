@@ -9,7 +9,6 @@ import (
 	accesslogv3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	clusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	corev3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	endpointv3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	routev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	streamv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/stream/v3"
 	corsv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
@@ -222,9 +221,6 @@ func printServiceCfg() {
 	serviceCfg := &sdapi.Service{
 		XdsClusterName: "xds-cluster",
 		ListenPort:     9091,
-		EnvoyEndpoints: []*endpointv3.ClusterLoadAssignment{
-			{},
-		},
 		EnvoyCluster: &clusterv3.Cluster{
 			ConnectTimeout:       durationpb.New(15 * time.Second),
 			ClusterDiscoveryType: &clusterv3.Cluster_Type{Type: clusterv3.Cluster_EDS},
